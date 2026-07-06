@@ -1,0 +1,576 @@
+<!DOCTYPE html>
+<html lang="bn" data-theme="light" data-lang="bn">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="description" content="ওহমের সূত্র ইন্টারেক্টিভ সার্কিট সিমুলেটর — ভার্চুয়াল ইলেকট্রনিক্স ল্যাবরেটরি" data-desc-bn="ওহমের সূত্র ইন্টারেক্টিভ সার্কিট সিমুলেটর — ভার্চুয়াল ইলেকট্রনিক্স ল্যাবরেটরি" data-desc-en="Interactive Ohm's Law Circuit Simulator — Virtual Electronics Laboratory">
+  <title>ওহমের সূত্র সার্কিট সিমুলেটর</title>
+
+  <!-- 10MS Fonts: Inter (English) + Hind Siliguri (Bangla) -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Hind+Siliguri:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <!-- Main application wrapper -->
+  <div id="app" class="app">
+
+    <!-- Header bar -->
+    <header class="header">
+      <div class="header-left">
+        <!-- V=IR brand mark -->
+        <div class="logo" aria-hidden="true">
+          <svg viewBox="0 0 36 36" width="36" height="36">
+            <circle cx="18" cy="18" r="16" fill="none" stroke="#FFD600" stroke-width="2"/>
+            <text x="18" y="23" text-anchor="middle" font-size="10" fill="#FFD600" font-weight="800" font-family="Inter,sans-serif">V=IR</text>
+          </svg>
+        </div>
+        <div class="header-title-block">
+          <span class="header-eyebrow">
+            <span class="lang-bn">১০MS সিমুলেটর</span>
+            <span class="lang-en">10MS Simulator</span>
+          </span>
+          <h1 class="bn">
+            <span class="lang-bn">ওহমের সূত্র সার্কিট সিমুলেটর</span>
+            <span class="lang-en" style="font-family:'Inter',sans-serif;">Ohm's Law Circuit Simulator</span>
+          </h1>
+          <span class="subtitle bn">
+            <span class="lang-bn">ভার্চুয়াল ইলেকট্রনিক্স ল্যাবরেটরি</span>
+            <span class="lang-en">Virtual Electronics Laboratory</span>
+          </span>
+        </div>
+      </div>
+      <div class="header-controls">
+        <!-- Language Switcher Button -->
+        <button id="btn-lang" class="btn btn-secondary" title="ভাষা পরিবর্তন করুন" aria-label="ভাষা পরিবর্তন করুন">
+          <span class="lang-bn" style="font-family:'Inter', sans-serif; font-size:12px; font-weight:700;">EN</span>
+          <span class="lang-en" style="font-family:'Hind Siliguri', sans-serif; font-size:12px; font-weight:700;">বাংলা</span>
+        </button>
+        <button id="btn-theme" class="btn btn-icon" title="থিম পরিবর্তন" aria-label="থিম পরিবর্তন">
+          <span class="icon-sun">☀</span>
+          <span class="icon-moon">🌙</span>
+        </button>
+        <button id="btn-fullscreen" class="btn btn-icon" title="ফুলস্ক্রিন" aria-label="ফুলস্ক্রিন">⛶</button>
+        <button id="btn-screenshot" class="btn btn-icon" title="স্ক্রিনশট" aria-label="স্ক্রিনশট">📷</button>
+        <button id="btn-export" class="btn btn-secondary" data-title-bn="সেটিংস এক্সপোর্ট করুন" data-title-en="Export Settings as JSON">
+          <span class="lang-bn">এক্সপোর্ট</span>
+          <span class="lang-en">Export</span>
+        </button>
+        <button id="btn-import" class="btn btn-secondary" data-title-bn="সেটিংস ইম্পোর্ট করুন" data-title-en="Import Settings from JSON">
+          <span class="lang-bn">ইম্পোর্ট</span>
+          <span class="lang-en">Import</span>
+        </button>
+        <input type="file" id="import-file" accept=".json" hidden>
+      </div>
+    </header>
+
+    <!-- Safety alert banner -->
+    <div id="safety-banner" class="safety-banner hidden" role="alert"></div>
+
+    <!-- Primary content area -->
+    <main class="main-content">
+
+      <!-- Circuit visualization panel -->
+      <section class="circuit-panel" aria-label="Circuit board">
+        <div class="panel-toolbar">
+          <span class="panel-title bn">
+            <span class="lang-bn">সার্কিট বোর্ড</span>
+            <span class="lang-en">Circuit Board</span>
+          </span>
+          <div class="zoom-controls">
+            <button id="btn-zoom-out" class="btn btn-sm" data-title-bn="ছোট করুন" data-title-en="Zoom out" title="ছোট করুন">−</button>
+            <span id="zoom-level">100%</span>
+            <button id="btn-zoom-in" class="btn btn-sm" data-title-bn="বড় করুন" data-title-en="Zoom in" title="বড় করুন">+</button>
+            <button id="btn-zoom-reset" class="btn btn-sm" data-title-bn="জুম রিসেট" data-title-en="Reset zoom" title="জুম রিসেট">⟲</button>
+          </div>
+        </div>
+        <div id="circuit-viewport" class="circuit-viewport">
+          <svg id="circuit-svg" class="circuit-svg" viewBox="0 0 900 520" xmlns="http://www.w3.org/2000/svg">
+            <defs>
+              <!-- Glow filters -->
+              <filter id="glow-blue" x="-50%" y="-50%" width="200%" height="200%">
+                <feGaussianBlur stdDeviation="3" result="blur"/>
+                <feMerge><feMergeNode in="blur"/><feMergeNode in="SourceGraphic"/></feMerge>
+              </filter>
+              <filter id="glow-yellow" x="-50%" y="-50%" width="200%" height="200%">
+                <feGaussianBlur stdDeviation="6" result="blur"/>
+                <feMerge><feMergeNode in="blur"/><feMergeNode in="SourceGraphic"/></feMerge>
+              </filter>
+              <filter id="glow-wire" x="-20%" y="-20%" width="140%" height="140%">
+                <feGaussianBlur stdDeviation="2" result="blur"/>
+                <feMerge><feMergeNode in="blur"/><feMergeNode in="SourceGraphic"/></feMerge>
+              </filter>
+              <!-- Electron gradient -->
+              <radialGradient id="electron-grad">
+                <stop offset="0%"   stop-color="#7df9ff"/>
+                <stop offset="60%"  stop-color="#00bfff"/>
+                <stop offset="100%" stop-color="#0066cc" stop-opacity="0"/>
+              </radialGradient>
+              <!-- Wire gradient -->
+              <linearGradient id="wire-grad" x1="0%" y1="0%" x2="100%" y2="0%">
+                <stop offset="0%"   class="wire-stop-a"/>
+                <stop offset="100%" class="wire-stop-b"/>
+              </linearGradient>
+            </defs>
+
+            <!-- Circuit group (transformed for zoom) -->
+            <g id="circuit-group">
+
+              <!-- Wire paths (clockwise flow) -->
+              <g id="wires-group">
+                <!-- Top wire: battery+ to switch -->
+                <path id="wire-top-left"    class="wire" d="M 155 130 L 210 130"/>
+                <!-- Switch to ammeter -->
+                <path id="wire-top-mid1"    class="wire" d="M 290 130 L 330 130"/>
+                <!-- Ammeter to resistor -->
+                <path id="wire-top-mid2"    class="wire" d="M 410 130 L 470 130"/>
+                <!-- Resistor to bulb -->
+                <path id="wire-top-right"   class="wire" d="M 550 130 L 620 130"/>
+                <!-- Bulb down -->
+                <path id="wire-right"       class="wire" d="M 700 130 L 700 390"/>
+                <!-- Bottom wire -->
+                <path id="wire-bottom"      class="wire" d="M 700 390 L 100 390"/>
+                <!-- Battery up -->
+                <path id="wire-left"        class="wire" d="M 100 390 L 100 270"/>
+                <!-- Battery to top -->
+                <path id="wire-battery-top" class="wire" d="M 100 170 L 100 130 L 155 130"/>
+                <!-- Voltmeter branches -->
+                <path id="wire-volt-top"    class="wire wire-volt" d="M 510 130 L 510 200"/>
+                <path id="wire-volt-bot"    class="wire wire-volt" d="M 510 390 L 510 260"/>
+              </g>
+
+              <!-- Current direction arrows -->
+              <g id="arrows-group" class="arrows">
+                <polygon class="arrow" points="180,125 190,130 180,135"/>
+                <polygon class="arrow" points="360,125 370,130 360,135"/>
+                <polygon class="arrow" points="490,125 500,130 490,135"/>
+                <polygon class="arrow" points="640,125 650,130 640,135"/>
+                <polygon class="arrow" points="695,200 700,210 705,200"/>
+                <polygon class="arrow" points="400,385 390,390 400,395"/>
+                <polygon class="arrow" points="100,320 95,330 105,330"/>
+              </g>
+
+              <!-- Electron container -->
+              <g id="electrons-group"></g>
+
+              <!-- Battery component -->
+              <g id="battery" class="component" data-tooltip-bn="ব্যাটারি (DC) — সামঞ্জস্যযোগ্য ভোল্টেজ উৎস" data-tooltip-en="DC Battery — adjustable voltage source">
+                <rect x="70" y="170" width="60" height="100" rx="8" class="comp-body"/>
+                <line x1="85"  y1="190" x2="115" y2="190" class="battery-plate battery-pos"/>
+                <line x1="80"  y1="210" x2="120" y2="210" class="battery-plate battery-neg"/>
+                <line x1="85"  y1="230" x2="115" y2="230" class="battery-plate battery-pos"/>
+                <line x1="80"  y1="250" x2="120" y2="250" class="battery-plate battery-neg"/>
+                <!-- Energy fill -->
+                <rect id="battery-fill" x="74" y="174" width="52" height="92" rx="5" class="battery-fill"/>
+                <text x="100" y="162" text-anchor="middle">
+                  <tspan class="lang-bn comp-label">ব্যাটারি</tspan>
+                  <tspan class="lang-en comp-label">Battery</tspan>
+                </text>
+                <text x="100" y="290" id="battery-voltage-label" class="comp-value" text-anchor="middle">12.0 V</text>
+                <text x="72"  y="185" class="terminal-label pos">+</text>
+                <text x="72"  y="255" class="terminal-label neg">−</text>
+                <circle id="battery-glow" cx="100" cy="220" r="55" class="battery-glow"/>
+              </g>
+
+              <!-- Switch component -->
+              <g id="switch" class="component clickable" data-tooltip-bn="সুইচ খুলতে/বন্ধ করতে ক্লিক করুন" data-tooltip-en="Click to open or close the switch" tabindex="0" role="button" aria-label="সার্কিট সুইচ">
+                <circle cx="250" cy="130" r="8" class="switch-contact"/>
+                <circle cx="290" cy="130" r="8" class="switch-contact"/>
+                <line id="switch-arm" x1="250" y1="130" x2="290" y2="130" class="switch-arm"/>
+                <text x="270" y="112" text-anchor="middle">
+                  <tspan class="lang-bn comp-label">সুইচ</tspan>
+                  <tspan class="lang-en comp-label">Switch</tspan>
+                </text>
+                <text id="switch-state-label" x="270" y="155" class="comp-value" text-anchor="middle">বন্ধ</text>
+                <!-- Spark animation group -->
+                <g id="spark-group" class="spark-group"></g>
+              </g>
+
+              <!-- Ammeter component -->
+              <g id="ammeter" class="component" data-tooltip-bn="সার্কিটে প্রবাহিত বিদ্যুৎ পরিমাপ করে" data-tooltip-en="Measures current flowing through the circuit">
+                <circle cx="370" cy="130" r="35" class="meter-body"/>
+                <circle cx="370" cy="130" r="30" class="meter-face"/>
+                <!-- Scale marks -->
+                <g class="meter-scale">
+                  <line x1="370" y1="105" x2="370" y2="110" class="scale-mark"/>
+                  <line x1="395" y1="130" x2="390" y2="130" class="scale-mark"/>
+                  <line x1="345" y1="130" x2="350" y2="130" class="scale-mark"/>
+                  <line x1="385" y1="110" x2="382" y2="113" class="scale-mark"/>
+                  <line x1="355" y1="110" x2="358" y2="113" class="scale-mark"/>
+                </g>
+                <line id="ammeter-needle" x1="370" y1="130" x2="370" y2="105" class="meter-needle"/>
+                <circle cx="370" cy="130" r="4" class="meter-pivot"/>
+                <text x="370" y="128" class="meter-symbol" text-anchor="middle">A</text>
+                <text x="370" y="112" text-anchor="middle">
+                  <tspan class="lang-bn comp-label">অ্যামিটার</tspan>
+                  <tspan class="lang-en comp-label">Ammeter</tspan>
+                </text>
+                <rect x="340" y="168" width="60" height="22" rx="3" class="digital-display"/>
+                <text id="ammeter-digital" x="370" y="184" class="digital-text" text-anchor="middle">0.000 A</text>
+              </g>
+
+              <!-- Resistor component -->
+              <g id="resistor" class="component" data-tooltip-bn="বিদ্যুৎ প্রবাহে বাধা দেয় — সামঞ্জস্যযোগ্য রোধ" data-tooltip-en="Opposes current flow — adjustable resistance">
+                <path d="M 470 130 L 485 115 L 500 145 L 515 115 L 530 145 L 545 115 L 550 130" class="resistor-zigzag"/>
+                <text x="510" y="112" text-anchor="middle">
+                  <tspan class="lang-bn comp-label">রেজিস্টার</tspan>
+                  <tspan class="lang-en comp-label">Resistor</tspan>
+                </text>
+                <text id="resistor-value-label" x="510" y="165" class="comp-value" text-anchor="middle">100 Ω</text>
+              </g>
+
+              <!-- Voltmeter component (parallel) -->
+              <g id="voltmeter" class="component" data-tooltip-bn="রেজিস্টারের দুই প্রান্তে ভোল্টেজ পরিমাপ করে" data-tooltip-en="Measures voltage across the resistor">
+                <circle cx="510" cy="230" r="30" class="meter-body"/>
+                <circle cx="510" cy="230" r="25" class="meter-face"/>
+                <g class="meter-scale">
+                  <line x1="510" y1="208" x2="510" y2="212" class="scale-mark"/>
+                  <line x1="530" y1="230" x2="527" y2="230" class="scale-mark"/>
+                  <line x1="490" y1="230" x2="493" y2="230" class="scale-mark"/>
+                </g>
+                <line id="voltmeter-needle" x1="510" y1="230" x2="510" y2="208" class="meter-needle"/>
+                <circle cx="510" cy="230" r="3" class="meter-pivot"/>
+                <text x="510" y="228" class="meter-symbol" text-anchor="middle">V</text>
+                <text x="510" y="198" text-anchor="middle">
+                  <tspan class="lang-bn comp-label">ভোল্টমিটার</tspan>
+                  <tspan class="lang-en comp-label">Voltmeter</tspan>
+                </text>
+                <rect x="480" y="265" width="60" height="22" rx="3" class="digital-display"/>
+                <text id="voltmeter-digital" x="510" y="281" class="digital-text" text-anchor="middle">0.00 V</text>
+              </g>
+
+              <!-- Light Bulb component -->
+              <g id="bulb" class="component" data-tooltip-bn="উজ্জ্বলতা শক্তি ক্ষয়ের উপর নির্ভর করে" data-tooltip-en="Brightness depends on power dissipation">
+                <circle cx="700" cy="130" r="28" class="bulb-glass"/>
+                <circle id="bulb-glow" cx="700" cy="130" r="40" class="bulb-glow"/>
+                <!-- Filament -->
+                <path id="bulb-filament" d="M 690 125 Q 700 140 710 125" class="bulb-filament"/>
+                <path d="M 688 125 L 688 118 M 712 125 L 712 118" class="bulb-leads"/>
+                <rect x="686" y="115" width="28" height="6" rx="2" class="bulb-base"/>
+                <text x="700" y="102" text-anchor="middle">
+                  <tspan class="lang-bn comp-label">বাল্ব</tspan>
+                  <tspan class="lang-en comp-label">Light Bulb</tspan>
+                </text>
+                <text id="bulb-brightness-label" x="700" y="175" class="comp-value" text-anchor="middle">0%</text>
+              </g>
+
+            </g><!-- end circuit-group -->
+          </svg>
+        </div>
+      </section>
+
+      <!-- Controls and dashboard sidebar -->
+      <aside class="sidebar">
+
+        <!-- User controls -->
+        <section class="control-panel card">
+          <h2 class="bn">
+            <span class="lang-bn">নিয়ন্ত্রণ</span>
+            <span class="lang-en">Controls</span>
+          </h2>
+
+          <div class="control-group">
+            <label for="voltage-slider" class="bn">
+              <span class="lang-bn">ভোল্টেজ</span>
+              <span class="lang-en">Voltage</span>
+              <span id="voltage-display" class="control-value">12.0 V</span>
+            </label>
+            <input type="range" id="voltage-slider" min="0" max="24" step="0.1" value="12">
+          </div>
+
+          <div class="control-group">
+            <label for="resistance-slider" class="bn">
+              <span class="lang-bn">রোধ</span>
+              <span class="lang-en">Resistance</span>
+              <span id="resistance-display" class="control-value">100 Ω</span>
+            </label>
+            <input type="range" id="resistance-slider" min="0" max="1000" step="1" value="100">
+          </div>
+
+          <div class="control-row">
+            <button id="btn-reset" class="btn btn-primary" data-title-bn="ডিফল্টে রিসেট করুন" data-title-en="Reset to default values">
+              <span class="lang-bn">রিসেট</span>
+              <span class="lang-en">Reset</span>
+            </button>
+            <button id="btn-randomize" class="btn btn-secondary" data-title-bn="এলোমেলো মান সেট করুন" data-title-en="Randomize circuit values">
+              <span class="lang-bn">র্যান্ডম</span>
+              <span class="lang-en">Randomize</span>
+            </button>
+          </div>
+
+          <div class="control-row">
+            <button id="btn-pause" class="btn btn-warning" data-title-bn="অ্যানিমেশন বিরতি" data-title-en="Pause animations">
+              <span class="lang-bn">বিরতি</span>
+              <span class="lang-en">Pause</span>
+            </button>
+            <button id="btn-resume" class="btn btn-success" data-title-bn="অ্যানিমেশন চালু করুন" data-title-en="Resume animations">
+              <span class="lang-bn">চালু</span>
+              <span class="lang-en">Resume</span>
+            </button>
+          </div>
+        </section>
+
+        <!-- Live dashboard -->
+        <section class="dashboard card">
+          <h2 class="bn">
+            <span class="lang-bn">লাইভ ড্যাশবোর্ড</span>
+            <span class="lang-en">Live Dashboard</span>
+          </h2>
+          <div class="dashboard-grid">
+            <div class="dash-item">
+              <span class="dash-label">
+                <span class="lang-bn">ভোল্টেজ (V)</span>
+                <span class="lang-en">Voltage (V)</span>
+              </span>
+              <span id="dash-voltage" class="dash-value">12.00</span>
+            </div>
+            <div class="dash-item">
+              <span class="dash-label">
+                <span class="lang-bn">বিদ্যুৎ (A)</span>
+                <span class="lang-en">Current (A)</span>
+              </span>
+              <span id="dash-current" class="dash-value">0.120</span>
+            </div>
+            <div class="dash-item">
+              <span class="dash-label">
+                <span class="lang-bn">রোধ (Ω)</span>
+                <span class="lang-en">Resistance (Ω)</span>
+              </span>
+              <span id="dash-resistance" class="dash-value">100</span>
+            </div>
+            <div class="dash-item">
+              <span class="dash-label">
+                <span class="lang-bn">শক্তি (W)</span>
+                <span class="lang-en">Power (W)</span>
+              </span>
+              <span id="dash-power" class="dash-value">1.44</span>
+            </div>
+            <div class="dash-item">
+              <span class="dash-label">
+                <span class="lang-bn">বাল্বের উজ্জ্বলতা</span>
+                <span class="lang-en">Bulb Brightness</span>
+              </span>
+              <span id="dash-brightness" class="dash-value">12%</span>
+            </div>
+            <div class="dash-item">
+              <span class="dash-label">
+                <span class="lang-bn">ইলেকট্রন গতি</span>
+                <span class="lang-en">Electron Speed</span>
+              </span>
+              <span id="dash-electron-speed" class="dash-value">0.60×</span>
+            </div>
+            <div class="dash-item dash-full">
+              <span class="dash-label">
+                <span class="lang-bn">সুইচের অবস্থা</span>
+                <span class="lang-en">Switch State</span>
+              </span>
+              <span id="dash-switch" class="dash-value dash-switch-closed">বন্ধ</span>
+            </div>
+          </div>
+
+          <!-- Live calculations -->
+          <div class="calculations">
+            <h3 class="bn">
+              <span class="lang-bn">ওহমের সূত্র</span>
+              <span class="lang-en">Ohm's Law</span>
+            </h3>
+            <p id="calc-ohm"     class="calc-formula">V = I × R → 12.00 = 0.120 × 100</p>
+            <p id="calc-current" class="calc-formula">I = V / R → 0.120 = 12.00 / 100</p>
+            <p id="calc-power"   class="calc-formula">P = V × I → 1.44 = 12.00 × 0.120</p>
+          </div>
+        </section>
+
+      </aside>
+    </main>
+
+    <!-- Graphs section -->
+    <section class="graphs-section card">
+      <div class="graphs-header">
+        <h2 class="bn">
+          <span class="lang-bn">লাইভ গ্রাফ</span>
+          <span class="lang-en">Live Graphs</span>
+        </h2>
+        <button id="btn-clear-graphs" class="btn btn-sm btn-secondary">
+          <span class="lang-bn">গ্রাফ মুছুন</span>
+          <span class="lang-en">Clear Graphs</span>
+        </button>
+      </div>
+      <div class="graphs-grid">
+        <div class="graph-container">
+          <h3 class="bn">
+            <span class="lang-bn">বিদ্যুৎ বনাম সময়</span>
+            <span class="lang-en">Current vs Time</span>
+          </h3>
+          <canvas id="graph-current" width="400" height="180"></canvas>
+        </div>
+        <div class="graph-container">
+          <h3 class="bn">
+            <span class="lang-bn">ভোল্টেজ বনাম সময়</span>
+            <span class="lang-en">Voltage vs Time</span>
+          </h3>
+          <canvas id="graph-voltage" width="400" height="180"></canvas>
+        </div>
+        <div class="graph-container">
+          <h3 class="bn">
+            <span class="lang-bn">শক্তি বনাম সময়</span>
+            <span class="lang-en">Power vs Time</span>
+          </h3>
+          <canvas id="graph-power" width="400" height="180"></canvas>
+        </div>
+      </div>
+    </section>
+
+    <!-- Educational section -->
+    <section class="education-section card">
+      <h2 class="bn">
+        <span class="lang-bn">শিখুন: ওহমের সূত্রের ধারণা</span>
+        <span class="lang-en">Learn: Ohm's Law Concepts</span>
+      </h2>
+      <div class="education-grid">
+        <article class="edu-card edu-full">
+          <h3 class="bn"><span class="edu-icon">📘</span> <span class="lang-bn">চলো শিখে নিই: ওমের সূত্র এবং বেসিক সার্কিটের আদ্যোপান্ত</span><span class="lang-en">Let's learn: Ohm's law and basic circuits</span></h3>
+          <ol class="concept-list">
+            <li>
+              <strong><span class="lang-bn">বিভব পার্থক্য বা ভোল্টেজ (Voltage):</span><span class="lang-en">Potential difference or voltage (Voltage):</span></strong>
+              <p id="edu-voltage"></p>
+            </li>
+            <li>
+              <strong><span class="lang-bn">তড়িৎ প্রবাহ (Electric Current):</span><span class="lang-en">Electric current (Electric Current):</span></strong>
+              <p id="edu-current"></p>
+            </li>
+            <li>
+              <strong><span class="lang-bn">রোধ (Resistance):</span><span class="lang-en">Resistance (Resistance):</span></strong>
+              <p id="edu-resistance"></p>
+            </li>
+            <li>
+              <strong><span class="lang-bn">তড়িৎ ক্ষমতা (Electric Power):</span><span class="lang-en">Electric power (Electric Power):</span></strong>
+              <p id="edu-power"></p>
+            </li>
+            <li>
+              <strong><span class="lang-bn">ওমের সূত্র (Ohm's Law):</span><span class="lang-en">Ohm's law (Ohm's Law):</span></strong>
+              <p id="edu-ohmslaw"></p>
+            </li>
+            <li>
+              <strong><span class="lang-bn">তড়িৎচালক বল (EMF):</span><span class="lang-en">Electromotive force (EMF):</span></strong>
+              <p id="edu-emf"></p>
+            </li>
+            <li>
+              <strong><span class="lang-bn">আপেক্ষিক রোধ (Resistivity):</span><span class="lang-en">Resistivity (Resistivity):</span></strong>
+              <p id="edu-resistivity"></p>
+            </li>
+            <li>
+              <strong><span class="lang-bn">তুল্য রোধ (Equivalent Resistance):</span><span class="lang-en">Equivalent resistance (Equivalent Resistance):</span></strong>
+              <p id="edu-equivalent"></p>
+            </li>
+          </ol>
+        </article>
+      </div>
+
+      <div class="example-problems">
+        <h3 class="bn example-title">
+          <span class="lang-bn">NCTB প্রশ্নোত্তর উদাহরণ</span>
+          <span class="lang-en">NCTB Worked Examples</span>
+        </h3>
+        <div class="example-grid">
+          <article class="example-card">
+            <h4><span class="lang-bn">প্রশ্ন ১</span><span class="lang-en">Question 1</span></h4>
+            <p>
+              <span class="lang-bn">একটি পরিবাহীর দুই প্রান্তের বিভব পার্থক্য 220 V এবং এর রোধ 110 Ω। পরিবাহীর মধ্য দিয়ে কী পরিমাণ তড়িৎ প্রবাহিত হবে?</span>
+              <span class="lang-en">A conductor has a potential difference of 220 V across its ends and a resistance of 110 Ω. What current flows through the conductor?</span>
+            </p>
+            <p><strong><span class="lang-bn">সমাধান:</span><span class="lang-en">Solution:</span></strong></p>
+            <pre class="math-block">I = V / R
+I = 220 / 110
+I = 2 A</pre>
+            <p>
+              <strong><span class="lang-bn">উত্তর:</span><span class="lang-en">Answer:</span></strong>
+              <span class="lang-bn">পরিবাহীর মধ্য দিয়ে 2 A তড়িৎ প্রবাহিত হবে।</span>
+              <span class="lang-en">A current of 2 A flows through the conductor.</span>
+            </p>
+          </article>
+
+          <article class="example-card">
+            <h4><span class="lang-bn">প্রশ্ন ২</span><span class="lang-en">Question 2</span></h4>
+            <p>
+              <span class="lang-bn">একটি বৈদ্যুতিক হিটারের মধ্য দিয়ে 5 A তড়িৎ প্রবাহিত হচ্ছে এবং এর দুই প্রান্তের বিভব পার্থক্য 220 V। হিটারটির বৈদ্যুতিক ক্ষমতা কত?</span>
+              <span class="lang-en">A heater carries a current of 5 A and the voltage across it is 220 V. What is its electrical power?</span>
+            </p>
+            <p><strong><span class="lang-bn">সমাধান:</span><span class="lang-en">Solution:</span></strong></p>
+            <pre class="math-block">P = V × I
+P = 220 × 5
+P = 1100 W</pre>
+            <p>
+              <strong><span class="lang-bn">উত্তর:</span><span class="lang-en">Answer:</span></strong>
+              <span class="lang-bn">হিটারটির ক্ষমতা 1100 W বা 1.1 kW।</span>
+              <span class="lang-en">The heater’s power is 1100 W or 1.1 kW.</span>
+            </p>
+          </article>
+
+          <article class="example-card">
+            <h4><span class="lang-bn">প্রশ্ন ৩</span><span class="lang-en">Question 3</span></h4>
+            <p>
+              <span class="lang-bn">10 Ω এবং 20 Ω মানের দুটি রোধকে শ্রেণি সমবায়ে যুক্ত করে একটি 12 V ব্যাটারির সাথে যুক্ত করা হলো। বর্তনীর মোট তড়িৎ প্রবাহ কত?</span>
+              <span class="lang-en">Two resistors of 10 Ω and 20 Ω are connected in series to a 12 V battery. What is the total current in the circuit?</span>
+            </p>
+            <p><strong><span class="lang-bn">সমাধান:</span><span class="lang-en">Solution:</span></strong></p>
+            <pre class="math-block">R_s = R₁ + R₂
+R_s = 10 + 20 = 30 Ω
+I = V / R_s
+I = 12 / 30
+I = 0.4 A</pre>
+            <p>
+              <strong><span class="lang-bn">উত্তর:</span><span class="lang-en">Answer:</span></strong>
+              <span class="lang-bn">বর্তনীর মোট তড়িৎ প্রবাহ 0.4 A।</span>
+              <span class="lang-en">The total current in the circuit is 0.4 A.</span>
+            </p>
+          </article>
+
+          <article class="example-card">
+            <h4><span class="lang-bn">প্রশ্ন ৪</span><span class="lang-en">Question 4</span></h4>
+            <p>
+              <span class="lang-bn">5 Ω, 10 Ω এবং 15 Ω এর তিনটি রোধ শ্রেণি সমবায়ে যুক্ত করে একটি 60 V উৎসের সাথে সংযুক্ত করা হলো। 10 Ω রোধের দুই প্রান্তের বিভব পার্থক্য কত?</span>
+              <span class="lang-en">Three resistors of 5 Ω, 10 Ω, and 15 Ω are connected in series to a 60 V source. What is the voltage across the 10 Ω resistor?</span>
+            </p>
+            <p><strong><span class="lang-bn">সমাধান:</span><span class="lang-en">Solution:</span></strong></p>
+            <pre class="math-block">R_s = 5 + 10 + 15 = 30 Ω
+I = V / R_s = 60 / 30 = 2 A
+V₁₀ = I × R₁₀
+V₁₀ = 2 × 10 = 20 V</pre>
+            <p>
+              <strong><span class="lang-bn">উত্তর:</span><span class="lang-en">Answer:</span></strong>
+              <span class="lang-bn">10 Ω রোধের দুই প্রান্তের বিভব পার্থক্য 20 V।</span>
+              <span class="lang-en">The voltage across the 10 Ω resistor is 20 V.</span>
+            </p>
+          </article>
+
+          <article class="example-card">
+            <h4><span class="lang-bn">প্রশ্ন ৫</span><span class="lang-en">Question 5</span></h4>
+            <p>
+              <span class="lang-bn">একটি বর্তনীতে 15 Ω রোধের সাথে একটি অজানা রোধ শ্রেণি সমবায়ে যুক্ত আছে। বর্তনীর মোট বিভব পার্থক্য 100 V এবং তড়িৎ প্রবাহ 4 A হলে, অজানা রোধটির মান কত?</span>
+              <span class="lang-en">A circuit has a 15 Ω resistor in series with an unknown resistor. If the total voltage is 100 V and the current is 4 A, what is the unknown resistance?</span>
+            </p>
+            <p><strong><span class="lang-bn">সমাধান:</span><span class="lang-en">Solution:</span></strong></p>
+            <pre class="math-block">R_s = V / I
+R_s = 100 / 4 = 25 Ω
+15 + R_x = 25
+R_x = 25 - 15 = 10 Ω</pre>
+            <p>
+              <strong><span class="lang-bn">উত্তর:</span><span class="lang-en">Answer:</span></strong>
+              <span class="lang-bn">অজানা রোধটির মান 10 Ω।</span>
+              <span class="lang-en">The unknown resistor is 10 Ω.</span>
+            </p>
+          </article>
+        </div>
+      </div>
+    </section>
+
+    <!-- Tooltip element -->
+    <div id="tooltip" class="tooltip hidden" role="tooltip"></div>
+
+  </div><!-- end app -->
+
+  <script src="script.js"></script>
+</body>
+</html>
