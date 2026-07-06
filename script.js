@@ -19,7 +19,7 @@ const Config = {
   HIGH_CURRENT_THRESHOLD: 5,
   MAX_ELECTRONS: 30,
   ELECTRON_BASE_SPEED: 0.002,
-  MAX_BRIGHTNESS_CURRENT: 10,
+  MAX_BRIGHTNESS_CURRENT: 1,
   GRAPH_MAX_POINTS: 300,
   GRAPH_UPDATE_INTERVAL: 50,
   ZOOM_MIN: 0.5,
@@ -35,7 +35,50 @@ function getLang() {
 }
 
 /* ============================================================
-   PHYSICS ENGINE ? Ohm's Law calculations
+   KATEX HELPERS — formula rendering
+   ============================================================ */
+
+/**
+ * Render a single LaTeX expression into an element (replaces its content).
+ * Falls back to the raw string if KaTeX is not loaded.
+ * @param {HTMLElement} el
+ * @param {string} latex - LaTeX string (no outer delimiters)
+ * @param {boolean} [display=true] - display (block) or inline mode
+ */
+function renderKatex(el, latex, display = true) {
+  if (window.katex) {
+    try {
+      el.innerHTML = katex.renderToString(latex, { displayMode: display, throwOnError: false });
+    } catch (e) {
+      el.textContent = latex;
+    }
+  } else {
+    el.textContent = latex;
+  }
+}
+
+/**
+ * Set HTML content that may contain \(...\) or \[...\] KaTeX delimiters,
+ * then run auto-render on the element so the math gets typeset.
+ * @param {HTMLElement} el
+ * @param {string} html - HTML string with optional KaTeX delimiters
+ */
+function setHtmlWithKatex(el, html) {
+  el.innerHTML = html;
+  if (window.renderMathInElement) {
+    renderMathInElement(el, {
+      delimiters: [
+        { left: '$$', right: '$$', display: true  },
+        { left: '\\[', right: '\\]', display: true  },
+        { left: '\\(', right: '\\)', display: false }
+      ],
+      throwOnError: false
+    });
+  }
+}
+
+/* ============================================================
+   PHYSICS ENGINE — Ohm's Law calculations
    ============================================================ */
 class PhysicsEngine {
   /**
@@ -67,9 +110,10 @@ class PhysicsEngine {
       voltageDrop = 0;
     }
 
-    const brightness = switchClosed
+    const calculatedBrightness = switchClosed
       ? Math.min(100, (current / Config.MAX_BRIGHTNESS_CURRENT) * 100)
       : 0;
+    const brightness = Math.max(1, calculatedBrightness);
 
     const electronSpeed = switchClosed && current > 0
       ? Math.min(3, current / 2)
@@ -643,10 +687,9 @@ class CircuitRenderer {
    * Apply zoom and pan transform to circuit group
    */
   applyTransform() {
-    const { zoom, panX, panY } = this.state;
     this.elements.circuitGroup.setAttribute(
       'transform',
-      `translate(${panX}, ${panY}) scale(${zoom})`
+      'translate(0, 0) scale(1)'
     );
   }
 
@@ -732,14 +775,22 @@ class CircuitRenderer {
 
     const b = this.smoothBrightness / 100;
     const glowOpacity = b * 0.7;
-    const glassColor = this.interpolateColor('#64748b', '#fbbf24', b);
+    
+    const displayVal = Math.round(target);
+    let glassColor = '#0C331E';
+    if (displayVal >= 81) glassColor = '#14FF6B';
+    else if (displayVal >= 61) glassColor = '#169E4A';
+    else if (displayVal >= 41) glassColor = '#136B37';
+    else if (displayVal >= 21) glassColor = '#114F2A';
+    else glassColor = '#0C331E';
 
-    this.elements.bulbGlow.setAttribute('fill', `rgba(251, 191, 36, ${glowOpacity})`);
+    this.elements.bulbGlow.setAttribute('fill', glassColor);
+    this.elements.bulbGlow.setAttribute('opacity', glowOpacity.toString());
     this.elements.bulbGlass.setAttribute('fill', glassColor);
 
     if (b > 0.05) {
       // No random flicker ? use stable filament color based on brightness only
-      const filamentColor = this.interpolateColor('#78716c', '#fff7ed', b);
+      const filamentColor = this.interpolateColor('#78716c', glassColor, b);
       this.elements.bulbFilament.setAttribute('stroke', filamentColor);
       this.elements.bulbFilament.setAttribute('stroke-width', String(2 + b * 2));
       if (b > 0.3) {
@@ -968,30 +1019,30 @@ class UIController {
 
     if (p.switchClosed && p.resistance > 0) {
       const totalR = p.resistance + Config.BULB_RESISTANCE;
-      this.elements.calcOhm.textContent =
-        `V = I ${mul} R ${arr} ${p.voltageDrop.toFixed(2)} = ${p.current.toFixed(3)} ${mul} ${p.resistance}`;
-      this.elements.calcCurrent.textContent =
-        `I = V / R ${arr} ${p.current.toFixed(3)} = ${p.voltage.toFixed(2)} / ${totalR}`;
-      this.elements.calcPower.textContent =
-        `P = V ${mul} I ${arr} ${p.power.toFixed(2)} = ${p.voltage.toFixed(2)} ${mul} ${p.current.toFixed(3)}`;
+      renderKatex(this.elements.calcOhm,
+        `V = I \\times R \\Rightarrow ${p.voltageDrop.toFixed(2)} = ${p.current.toFixed(3)} \\times ${p.resistance}`);
+      renderKatex(this.elements.calcCurrent,
+        `I = \\dfrac{V}{R} \\Rightarrow ${p.current.toFixed(3)} = \\dfrac{${p.voltage.toFixed(2)}}{${totalR}}`);
+      renderKatex(this.elements.calcPower,
+        `P = V \\times I \\Rightarrow ${p.power.toFixed(2)} = ${p.voltage.toFixed(2)} \\times ${p.current.toFixed(3)}`);
     } else if (!p.switchClosed) {
       if (lang === 'bn') {
-        this.elements.calcOhm.textContent = `V = I ${mul} R ${arr} \u09B8\u09BE\u09B0\u09CD\u0995\u09BF\u099F \u0996\u09CB\u09B2\u09BE (I = 0 A)`;
-        this.elements.calcCurrent.textContent = `I = V / R ${arr} \u09B8\u09C1\u09A7\u09BF\u099A \u0996\u09CB\u09B2\u09BE`;
-        this.elements.calcPower.textContent = `P = V ${mul} I ${arr} \u09B6\u0995\u09CD\u09A4\u09BF = 0 W`;
+        renderKatex(this.elements.calcOhm,    `V = I \\times R \\Rightarrow \\text{সার্কিট খোলা}\ (I = 0\\text{ A})`);
+        renderKatex(this.elements.calcCurrent, `I = \\dfrac{V}{R} \\Rightarrow \\text{সুইচ খোলা}`);
+        renderKatex(this.elements.calcPower,   `P = V \\times I \\Rightarrow \\text{শক্তি} = 0\\text{ W}`);
       } else {
-        this.elements.calcOhm.textContent = `V = I ${mul} R ${arr} Circuit open (I = 0 A)`;
-        this.elements.calcCurrent.textContent = `I = V / R ${arr} Switch is OPEN`;
-        this.elements.calcPower.textContent = `P = V ${mul} I ${arr} Power = 0 W`;
+        renderKatex(this.elements.calcOhm,    `V = I \\times R \\Rightarrow \\text{Circuit open}\ (I = 0\\text{ A})`);
+        renderKatex(this.elements.calcCurrent, `I = \\dfrac{V}{R} \\Rightarrow \\text{Switch is OPEN}`);
+        renderKatex(this.elements.calcPower,   `P = V \\times I \\Rightarrow \\text{Power} = 0\\text{ W}`);
       }
     } else if (lang === 'bn') {
-      this.elements.calcOhm.textContent = `V = I ${mul} R ${arr} \u09B6\u09B0\u09CD\u099F \u09B8\u09BE\u09B0\u09CD\u0995\u09BF\u099F!`;
-      this.elements.calcCurrent.textContent = `I = V / R ${arr} \u09AC\u09BF\u09A6\u09CD\u09AF\u09C1\u09CE \u0985\u09A4\u09CD\u09AF\u09A8\u09CD\u09A4 \u09AC\u09C7\u09B6\u09BF`;
-      this.elements.calcPower.textContent = `P = V ${mul} I ${arr} \u09B6\u0995\u09CD\u09A4\u09BF \u0985\u09A4\u09CD\u09AF\u09A8\u09CD\u09A4 \u09AC\u09C7\u09B6\u09BF`;
+      renderKatex(this.elements.calcOhm,    `V = I \\times R \\Rightarrow \\text{শর্ট সার্কিট!}`);
+      renderKatex(this.elements.calcCurrent, `I = \\dfrac{V}{R} \\Rightarrow \\text{বিদ্যুৎ অত্যন্ত বেশি}`);
+      renderKatex(this.elements.calcPower,   `P = V \\times I \\Rightarrow \\text{শক্তি অত্যন্ত বেশি}`);
     } else {
-      this.elements.calcOhm.textContent = `V = I ${mul} R ${arr} Short circuit!`;
-      this.elements.calcCurrent.textContent = `I = V / R ${arr} Current extremely high`;
-      this.elements.calcPower.textContent = `P = V ${mul} I ${arr} Power extremely high`;
+      renderKatex(this.elements.calcOhm,    `V = I \\times R \\Rightarrow \\text{Short circuit!}`);
+      renderKatex(this.elements.calcCurrent, `I = \\dfrac{V}{R} \\Rightarrow \\text{Current extremely high}`);
+      renderKatex(this.elements.calcPower,   `P = V \\times I \\Rightarrow \\text{Power extremely high}`);
     }
 
     this.updateEducationDynamic(p);
@@ -999,111 +1050,48 @@ class UIController {
   }
 
   /**
-   * Update educational section with live values (one language at a time)
+   * Update educational section with live values (bilingual)
    * @param {Object} p - Physics state
    */
-  updateEducation(p) {
-    const lang = getLang();
-    const currentMa = (p.current * 1000).toFixed(1);
-    const ohm = '\u03A9';
-
-    if (lang === 'bn') {
-      this.elements.eduVoltage.textContent =
-        `\u09AD\u09B2\u09CD\u099F\u09C7\u099C \u09B9\u09B2 \u09AC\u09C8\u09A6\u09CD\u09AF\u09C1\u09A4\u09BF\u0995 \u09B8\u09AE\u09CD\u09AD\u09BE\u09AC\u09CD\u09AF \u09AA\u09BE\u09B0\u09CD\u09A5\u0995\u09CD\u09AF \u09AF\u09BE \u0987\u09B2\u09C7\u0995\u099F\u09CD\u09B0\u09A8\u0995\u09C7 \u09B8\u09BE\u09B0\u09CD\u0995\u09BF\u099F\u09C7 \u09A0\u09C7\u09B2\u09C7 \u09A6\u09C7\u09AF\u09BC\u0964 ` +
-        `\u098F\u099F\u09BE\u0995\u09C7 \u09AC\u09CD\u09AF\u09BE\u099F\u09BE\u09B0\u09BF\u09B0 "\u099A\u09BE\u09AA" \u09B9\u09BF\u09B8\u09C7\u09AC\u09C7 \u09AD\u09BE\u09AC\u09C1\u09A8\u0964 \u09A4\u09CB\u09AE\u09BE\u09B0 \u09AC\u09B0\u09CD\u09A4\u09AE\u09BE\u09A8 \u09AD\u09B2\u09CD\u099F\u09C7\u099C ${p.voltage.toFixed(1)} V, ` +
-        `\u09AF\u09BE\u09B0 \u09AE\u09BE\u09A8\u09C7 \u09AA\u09CD\u09B0\u09A4\u09BF \u0995\u09C1\u09B2\u09AE\u09CD\u09AC \u099A\u09BE\u09B0\u09CD\u099C ${p.voltage.toFixed(1)} J \u09B6\u0995\u09CD\u09A4\u09BF \u09B2\u09BE\u09AD \u0995\u09B0\u09C7\u0964` +
-        (p.voltage > Config.HIGH_VOLTAGE_THRESHOLD
-          ? ' \u26A0 \u098F\u099F\u09BF 20 V \u09A8\u09BF\u09B0\u09BE\u09AA\u09A4\u09CD\u09A4\u09BE \u09B8\u09C0\u09AE\u09BE \u0985\u09A4\u09BF\u0995\u09CD\u09B0\u09AE \u0995\u09B0\u09C7\u099B\u09C7!'
-          : '');
-
-      this.elements.eduCurrent.textContent =
-        `\u09AC\u09BF\u09A6\u09CD\u09AF\u09C1\u09CE \u09AA\u09CD\u09B0\u09AC\u09BE\u09B9 \u09B9\u09B2 \u09AA\u09CD\u09B0\u09A4\u09BF \u09B8\u09C7\u0995\u09C7\u09A8\u09CD\u09A1\u09C7 \u09B8\u09BE\u09B0\u09CD\u0995\u09BF\u099F\u09C7 \u0987\u09B2\u09C7\u0995\u099F\u09CD\u09B0\u09A8\u09C7\u09B0 \u0997\u09A4\u09BF\u0964 ` +
-        (p.switchClosed
-          ? `\u09AC\u09B0\u09CD\u09A4\u09AE\u09BE\u09A8 \u09B8\u09C7\u099F\u09BF\u0982\u09AF\u09BC\u09C7 ${p.current.toFixed(3)} A (${currentMa} mA) \u0998\u09A1\u09BC\u09BF\u09B0 \u0995\u09BE\u09A1\u09BC\u09BE\u09B0 \u09A6\u09BF\u0995\u09C7 \u09AA\u09CD\u09B0\u09AC\u09BE\u09B9\u09BF\u09A4 \u09B9\u099A\u09CD\u099B\u09C7\u0964`
-          : '\u09B8\u09C1\u09A7\u09BF\u099A \u0996\u09CB\u09B2\u09BE \u2014 \u0995\u09CB\u09A8\u09CB \u09AC\u09BF\u09A6\u09CD\u09AF\u09C1\u09CE \u09AA\u09CD\u09B0\u09AC\u09BE\u09B9\u09BF\u09A4 \u09B9\u099A\u09CD\u099B\u09C7 \u09A8\u09BE (0 A)\u0964') +
-        ` I = V / R = ${p.voltage.toFixed(1)} V / ${p.resistance} ${ohm}.`;
-
-      this.elements.eduResistance.textContent =
-        `\u09B0\u09CB\u09A7 \u09AC\u09BF\u09A6\u09CD\u09AF\u09C1\u09CE \u09AA\u09CD\u09B0\u09AC\u09BE\u09B9\u09C7 \u09AC\u09BE\u09A7\u09BE \u09A6\u09C7\u09AF\u09BC\u0964 \u09A4\u09CB\u09AE\u09BE\u09B0 \u09B0\u09C7\u099C\u09BF\u09B8\u09CD\u099F\u09BE\u09B0 ${p.resistance} ${ohm} \u098F \u09B8\u09C7\u099F \u0995\u09B0\u09BE\u0964 ` +
-        `\u09AC\u09C7\u09B6\u09BF \u09B0\u09CB\u09A7 \u09AE\u09BE\u09A8\u09C7 \u09AC\u09C7\u09B6\u09BF \u09AD\u09B2\u09CD\u099F\u09C7\u099C\u09C7 \u0995\u09AE \u09AC\u09BF\u09A6\u09CD\u09AF\u09C1\u09CE \u09AA\u09CD\u09B0\u09AC\u09BE\u09B9 \u09B9\u09AF\u09BC\u0964 ` +
-        `${p.voltage.toFixed(1)} V \u098F, \u098F\u0987 \u09B0\u09CB\u09A7 \u09AC\u09BF\u09A6\u09CD\u09AF\u09C1\u09CE\u0995\u09C7 ${p.current.toFixed(3)} A \u098F \u09B8\u09C0\u09AE\u09BE\u09AC\u09A6\u09CD\u09A7 \u0995\u09B0\u09C7\u0964`;
-
-      this.elements.eduVoltage.innerHTML =
-        `<span class="lang-bn">ধরো, তুমি একটি পাইপ দিয়ে পানি পাঠাতে চাও — ঠিক সেভাবেই বর্তনীতে ইলেকট্রনকে এগিয়ে নিতে বৈদ্যুতিক চাপ দরকার। এই চাপকেই বিভব পার্থক্য বা ভোল্টেজ বলে। তোমার সেটিংসে প্রযোজ্য ভোল্টেজ ${p.voltage.toFixed(1)} V, মানে প্রতি কুলম্ব চার্জ ${p.voltage.toFixed(1)} J শক্তি পেতে পারে।</span>` +
-        `<span class="lang-en">Think of voltage as the electrical pressure that pushes electrons through the circuit. With your settings, the applied voltage is ${p.voltage.toFixed(1)} V, meaning each coulomb of charge can gain ${p.voltage.toFixed(1)} J of energy.</span>`;
-
-      this.elements.eduCurrent.innerHTML =
-        `<span class="lang-bn">কারেন্ট হল সার্কিটে ইলেকট্রনের ফ্লো রেট, এম্পিয়ার (A) এ মাপা হয়। তোমার সেটিংসে ${p.switchClosed ? `${p.current.toFixed(3)} A (${currentMa} mA)` : '0 A'} প্রবাহিত হচ্ছে। ${p.switchClosed ? `I = V / R = ${p.voltage.toFixed(1)} V / ${p.resistance + Config.BULB_RESISTANCE} ${ohm} = ${p.current.toFixed(3)} A` : 'সুইচ খোলা আছে, তাই কোনো বর্তন নেই।'}</span>` +
-        `<span class="lang-en">Current is the rate of electron flow through the circuit, measured in amperes (A). With your settings, ${p.switchClosed ? `${p.current.toFixed(3)} A (${currentMa} mA) flows clockwise.` : 'no current flows because the switch is open.'} ${p.switchClosed ? `I = V / R = ${p.voltage.toFixed(1)} V / ${p.resistance + Config.BULB_RESISTANCE} ${ohm} = ${p.current.toFixed(3)} A` : ''}</span>`;
-
-      this.elements.eduResistance.innerHTML =
-        `<span class="lang-bn">রোধ হল পরিবাহীতে বিদ্যুৎ প্রবাহকে বাধা দেওয়া। তোমার বাহ্যিক রেজিস্টার ${p.resistance} ${ohm}, আর সার্কিটে মোট রোধ ${ (p.resistance + Config.BULB_RESISTANCE).toFixed(0) } ${ohm}। একই ভোল্টেজে বেশি রোধ মানে কম কারেন্ট।</span>` +
-        `<span class="lang-en">Resistance is what opposes current flow. Your external resistor is ${p.resistance} ${ohm}, and the total circuit resistance is ${(p.resistance + Config.BULB_RESISTANCE).toFixed(0)} ${ohm}. For the same voltage, more resistance means less current.</span>`;
-
-      this.elements.eduPower.innerHTML =
-        `<span class="lang-bn">শক্তি হল একটি সার্কিটে বৈদ্যুতিক শক্তি রূপান্তরের হার, ওয়াট (W) এ মাপা হয়। P = V ${mul} I = ${p.voltage.toFixed(1)} ${mul} ${p.current.toFixed(3)} = ${p.power.toFixed(2)} W।</span>` +
-        `<span class="lang-en">Power is the rate at which electrical energy is converted, measured in watts (W). P = V ${mul} I = ${p.voltage.toFixed(1)} ${mul} ${p.current.toFixed(3)} = ${p.power.toFixed(2)} W.</span>`;
-
-      this.elements.eduOhmsLaw.innerHTML =
-        `<span class="lang-bn">ওমের সূত্র বলে, নির্দিষ্ট তাপমাত্রায় V = IR। তোমার সেটিংসে V = ${p.voltage.toFixed(1)} V, I = ${p.current.toFixed(3)} A এবং মোট R = ${(p.resistance + Config.BULB_RESISTANCE).toFixed(0)} ${ohm}।</span>` +
-        `<span class="lang-en">Ohm's law says V = IR. In your case, V = ${p.voltage.toFixed(1)} V, I = ${p.current.toFixed(3)} A, and total R = ${(p.resistance + Config.BULB_RESISTANCE).toFixed(0)} ${ohm}.</span>`;
-
-      this.elements.eduEmf.innerHTML =
-        `<span class="lang-bn">EMF হলো ব্যাটারির নিজস্ব শক্তি, যা একক আধানকে সার্কিটে পুরো ভ্রমণের জন্য সরবরাহ করে।</span>` +
-        `<span class="lang-en">EMF is the battery’s own electrical energy per unit charge, supplied when charge completes a full circuit.</span>`;
-
-      this.elements.eduResistivity.innerHTML =
-        `<span class="lang-bn">আপেক্ষিক রোধ হলো একটি উপাদানের নিজস্ব রোধ, যা তার দৈর্ঘ্য ও断স্ট্র্রেশন নয়, বরং উপাদানের প্রকৃতির ওপর নির্ভর করে।</span>` +
-        `<span class="lang-en">Resistivity is a material property that depends on the conductor itself, not its length or cross-section.</span>`;
-
-      this.elements.eduEquivalent.innerHTML =
-        `<span class="lang-bn">যদি অনেক রোধ সিরিজ বা প্যারাললে যুক্ত থাকে, তাদেরকে একটি সামঞ্জস্যপূর্ণ একক রোধে প্রতিস্থাপন করলে সার্কিটের মোট আচরণ অপরিবর্তিত থাকে।</span>` +
-        `<span class="lang-en">If many resistors are connected in series or parallel, they can be replaced by one equivalent resistor that preserves the circuit’s overall behavior.</span>`;
-    }
-  }
-
-  updateEducation(p) {
-    this.updateEducationDynamic(p);
-  }
-
   updateEducationDynamic(p) {
     const currentMa = (p.current * 1000).toFixed(1);
-    const ohm = 'Ω';
-    const mul = '×';
+    const ohm = '\\Omega';
+    const mul = '\\times';
     const totalR = p.resistance + Config.BULB_RESISTANCE;
 
-    this.elements.eduVoltage.innerHTML =
-      `<span class="lang-bn">ধরো, তুমি একটি পাইপ দিয়ে পানি পাঠাতে চাও — ঠিক সেভাবেই বর্তনীতে ইলেকট্রনকে এগিয়ে নিতে বৈদ্যুতিক চাপ দরকার। এই চাপকেই বিভব পার্থক্য বা ভোল্টেজ বলে। তোমার সেটিংসে প্রযোজ্য ভোল্টেজ ${p.voltage.toFixed(1)} V, মানে প্রতিটি কুলম্ব চার্জ ${p.voltage.toFixed(1)} J শক্তি পেতে পারে।</span>` +
-      `<span class="lang-en">Think of voltage as the electrical pressure that pushes electrons through the circuit. With your settings, the applied voltage is ${p.voltage.toFixed(1)} V, meaning each coulomb of charge gains ${p.voltage.toFixed(1)} J of energy.</span>`;
+    setHtmlWithKatex(this.elements.eduVoltage,
+      `<span class="lang-bn">ধরো, তুমি একটি পাইপ দিয়ে পানি পাঠাতে চাও — ঠিক সেভাবেই বর্তনীতে ইলেকট্রনকে এগিয়ে নিতে বৈদ্যুতিক চাপ দরকার। এই চাপকেই বিভব পার্থক্য বা ভোল্টেজ বলে। তোমার সেটিংসে প্রযোজ্য ভোল্টেজ \\(V = ${p.voltage.toFixed(1)}\\text{ V}\\), মানে প্রতিটি কুলম্ব চার্জ \\(${p.voltage.toFixed(1)}\\text{ J}\\) শক্তি পেতে পারে।</span>` +
+      `<span class="lang-en">Think of voltage as the electrical pressure that pushes electrons through the circuit. With your settings, the applied voltage is \\(V = ${p.voltage.toFixed(1)}\\text{ V}\\), meaning each coulomb of charge gains \\(${p.voltage.toFixed(1)}\\text{ J}\\) of energy.</span>`);
 
-    this.elements.eduCurrent.innerHTML =
-      `<span class="lang-bn">কারেন্ট হল সার্কিটে ইলেকট্রনের প্রবাহের হার, যা অ্যাম্পিয়ারে (A) মাপা হয়। তোমার সেটিংসে ${p.switchClosed ? `${p.current.toFixed(3)} A (${currentMa} mA)` : '0 A'} প্রবাহিত হচ্ছে। ${p.switchClosed ? `I = V / R = ${p.voltage.toFixed(1)} V / ${totalR} ${ohm} = ${p.current.toFixed(3)} A` : 'সুইচ খোলা থাকায় কোনো প্রবাহ নেই।'}</span>` +
-      `<span class="lang-en">Current is the rate of electron flow through the circuit, measured in amperes (A). With your settings, ${p.switchClosed ? `${p.current.toFixed(3)} A (${currentMa} mA) flows clockwise.` : 'no current flows because the switch is open.'} ${p.switchClosed ? `I = V / R = ${p.voltage.toFixed(1)} V / ${totalR} ${ohm} = ${p.current.toFixed(3)} A` : ''}</span>`;
+    setHtmlWithKatex(this.elements.eduCurrent,
+      `<span class="lang-bn">কারেন্ট হল সার্কিটে ইলেকট্রনের প্রবাহের হার, যা অ্যাম্পিয়ারে \\(\\text{A}\\) মাপা হয়। তোমার সেটিংসে ${p.switchClosed ? `\\(I = ${p.current.toFixed(3)}\\text{ A}\\) (বা \\(${currentMa}\\text{ mA}\\))` : '\\(I = 0\\text{ A}\\)'} প্রবাহিত হচ্ছে। ${p.switchClosed ? `\\(I = \\frac{V}{R} = \\frac{${p.voltage.toFixed(1)}}{${totalR}} = ${p.current.toFixed(3)}\\text{ A}\\)` : 'সুইচ খোলা থাকায় কোনো প্রবাহ নেই।'}</span>` +
+      `<span class="lang-en">Current is the rate of electron flow through the circuit, measured in amperes (\\(\\text{A}\\)). With your settings, ${p.switchClosed ? `\\(I = ${p.current.toFixed(3)}\\text{ A}\\) (or \\(${currentMa}\\text{ mA}\\))` : '\\(I = 0\\text{ A}\\)'} flows clockwise. ${p.switchClosed ? `\\(I = \\frac{V}{R_s} = \\frac{${p.voltage.toFixed(1)}}{${totalR}} = ${p.current.toFixed(3)}\\text{ A}\\)` : ''}</span>`);
 
-    this.elements.eduResistance.innerHTML =
-      `<span class="lang-bn">রোধ হল পরিবাহীতে বিদ্যুৎ প্রবাহকে বাধা দেয়। তোমার বাহ্যিক রেজিস্টার ${p.resistance} ${ohm}, আর সার্কিটের মোট রোধ ${totalR} ${ohm}। একই ভোল্টেজে বেশি রোধ মানে কম কারেন্ট।</span>` +
-      `<span class="lang-en">Resistance opposes current flow. Your external resistor is ${p.resistance} ${ohm}, and the total circuit resistance is ${totalR} ${ohm}. For the same voltage, higher resistance means less current.</span>`;
+    setHtmlWithKatex(this.elements.eduResistance,
+      `<span class="lang-bn">রোধ হল পরিবাহীতে বিদ্যুৎ প্রবাহকে বাধা দেয়। তোমার বাহ্যিক রেজিস্টার \\(R_x = ${p.resistance}\\,${ohm}\\), আর সার্কিটের মোট রোধ \\(R_s = ${totalR}\\,${ohm}\\)। একই ভোল্টেজে বেশি রোধ মানে কম কারেন্ট।</span>` +
+      `<span class="lang-en">Resistance opposes current flow. Your external resistor is \\(R_x = ${p.resistance}\\,${ohm}\\), and the total circuit resistance is \\(R_s = ${totalR}\\,${ohm}\\). For the same voltage, higher resistance means less current.</span>`);
 
-    this.elements.eduPower.innerHTML =
-      `<span class="lang-bn">শক্তি হল বৈদ্যুতিক শক্তি রূপান্তরের হার, যা ওয়াট (W) এ মাপা হয়। P = V ${mul} I = ${p.voltage.toFixed(1)} ${mul} ${p.current.toFixed(3)} = ${p.power.toFixed(2)} W।</span>` +
-      `<span class="lang-en">Power is the rate of electrical energy conversion, measured in watts (W). P = V ${mul} I = ${p.voltage.toFixed(1)} ${mul} ${p.current.toFixed(3)} = ${p.power.toFixed(2)} W.</span>`;
+    setHtmlWithKatex(this.elements.eduPower,
+      `<span class="lang-bn">শক্তি হল বৈদ্যুতিক শক্তি রূপান্তরের হার, যা ওয়াট (\\(\\text{W}\\)) এ মাপা হয়। \\(P = V \\times I = ${p.voltage.toFixed(1)} \\times ${p.current.toFixed(3)} = ${p.power.toFixed(2)}\\text{ W}\\)।</span>` +
+      `<span class="lang-en">Power is the rate of electrical energy conversion, measured in watts (\\(\\text{W}\\)). \\(P = V \\times I = ${p.voltage.toFixed(1)} \\times ${p.current.toFixed(3)} = ${p.power.toFixed(2)}\\text{ W}\\).</span>`);
 
-    this.elements.eduOhmsLaw.innerHTML =
-      `<span class="lang-bn">ওমের সূত্র বলে V = IR। এখানে V = ${p.voltage.toFixed(1)} V, I = ${p.current.toFixed(3)} A এবং মোট R = ${totalR} ${ohm}।</span>` +
-      `<span class="lang-en">Ohm's law says V = IR. Here V = ${p.voltage.toFixed(1)} V, I = ${p.current.toFixed(3)} A, and total R = ${totalR} ${ohm}.</span>`;
+    setHtmlWithKatex(this.elements.eduOhmsLaw,
+      `<span class="lang-bn">ওমের সূত্র বলে \\(V = I \\times R_s\\)। এখানে \\(V = ${p.voltage.toFixed(1)}\\text{ V}\\), \\(I = ${p.current.toFixed(3)}\\text{ A}\\) এবং মোট \\(R_s = ${totalR}\\,${ohm}\\)।</span>` +
+      `<span class="lang-en">Ohm's law states \\(V = I \\times R_s\\). Here \\(V = ${p.voltage.toFixed(1)}\\text{ V}\\), \\(I = ${p.current.toFixed(3)}\\text{ A}\\), and total \\(R_s = ${totalR}\\,${ohm}\\).</span>`);
 
-    this.elements.eduEmf.innerHTML =
-      `<span class="lang-bn">EMF হলো ব্যাটারির নিজস্ব বৈদ্যুতিক শক্তি প্রতি কুলম্ব চার্জে, যা চার্জের সম্পূর্ণ সার্কিট ভ্রমণের জন্য সরবরাহ করে।</span>` +
-      `<span class="lang-en">EMF is the battery's own electrical energy per unit charge, supplied as charge completes a full circuit.</span>`;
+    setHtmlWithKatex(this.elements.eduEmf,
+      `<span class="lang-bn">তড়িৎচালক বল বা EMF হলো ব্যাটারির নিজস্ব বৈদ্যুতিক শক্তি প্রতি কুলম্ব চার্জে, যা চার্জের সম্পূর্ণ সার্কিট ভ্রমণের জন্য সরবরাহ করে।</span>` +
+      `<span class="lang-en">EMF is the battery's own electrical energy per unit charge, supplied as charge completes a full circuit.</span>`);
 
-    this.elements.eduResistivity.innerHTML =
+    setHtmlWithKatex(this.elements.eduResistivity,
       `<span class="lang-bn">আপেক্ষিক রোধ হলো উপাদামের নিজস্ব বৈশিষ্ট্য, যা তার দৈর্ঘ্য বা প্রস্থ নয় বরং উপাদামের প্রকৃতির ওপর নির্ভর করে।</span>` +
-      `<span class="lang-en">Resistivity is a material property of resistance, depending on the conductor itself rather than its length or cross-section.</span>`;
+      `<span class="lang-en">Resistivity is a material property of resistance, depending on the conductor itself rather than its length or cross-section.</span>`);
 
-    this.elements.eduEquivalent.innerHTML =
+    setHtmlWithKatex(this.elements.eduEquivalent,
       `<span class="lang-bn">একাধিক রোধ সিরিজ বা প্যারাললে যুক্ত হলে, তাদের একটি তুল্য রোধ দিয়ে প্রতিস্থাপন করলে সার্কিটের মোট আচরণ অপরিবর্তিত থাকে।</span>` +
-      `<span class="lang-en">When multiple resistors are in series or parallel, they can be replaced by one equivalent resistor that preserves the circuit's overall behavior.</span>`;
+      `<span class="lang-en">When multiple resistors are in series or parallel, they can be replaced by one equivalent resistor that preserves the circuit's overall behavior.</span>`);
   }
+
 
   /**
    * Show or hide safety warning banner
@@ -1417,52 +1405,6 @@ class SimulatorApp {
     document.getElementById('btn-clear-graphs').addEventListener('click', () => {
       this.graphs.clear();
     });
-
-    document.getElementById('btn-zoom-in').addEventListener('click', () => {
-      this.setZoom(this.state.zoom + Config.ZOOM_STEP);
-    });
-
-    document.getElementById('btn-zoom-out').addEventListener('click', () => {
-      this.setZoom(this.state.zoom - Config.ZOOM_STEP);
-    });
-
-    document.getElementById('btn-zoom-reset').addEventListener('click', () => {
-      this.state.zoom = 1;
-      this.state.panX = 0;
-      this.state.panY = 0;
-      this.ui.updateZoomDisplay();
-    });
-
-    const viewport = document.getElementById('circuit-viewport');
-
-    viewport.addEventListener('wheel', (e) => {
-      e.preventDefault();
-      const delta = e.deltaY > 0 ? -Config.ZOOM_STEP : Config.ZOOM_STEP;
-      this.setZoom(this.state.zoom + delta);
-    }, { passive: false });
-
-    viewport.addEventListener('mousedown', (e) => {
-      if (e.button === 0) {
-        this.isDragging = true;
-        this.dragStart = {
-          x: e.clientX,
-          y: e.clientY,
-          panX: this.state.panX,
-          panY: this.state.panY
-        };
-      }
-    });
-
-    window.addEventListener('mousemove', (e) => {
-      if (this.isDragging) {
-        this.state.panX = this.dragStart.panX + (e.clientX - this.dragStart.x);
-        this.state.panY = this.dragStart.panY + (e.clientY - this.dragStart.y);
-      }
-    });
-
-    window.addEventListener('mouseup', () => {
-      this.isDragging = false;
-    });
   }
 
   /**
@@ -1633,11 +1575,55 @@ class SimulatorApp {
   }
 }
 
+
+/**
+ * Scan every .math-block element and render each $$...$$ equation
+ * using KaTeX in display mode. This is more reliable than auto-render
+ * text-node scanning.
+ */
+function renderMathBlocks() {
+  if (!window.katex) return;
+  document.querySelectorAll('.math-block').forEach(function (el) {
+    // Split by $$, odd indices are LaTeX, even are plain text/whitespace
+    var parts = el.innerHTML.split(/\$\$/);
+    var out = '';
+    parts.forEach(function (part, i) {
+      if (i % 2 === 1) {
+        // LaTeX content between $$...$$
+        try {
+          out += '<div class="katex-line">' +
+            katex.renderToString(part.trim(), { displayMode: true, throwOnError: false }) +
+            '</div>';
+        } catch (e) {
+          out += '<div class="katex-line">' + part + '</div>';
+        }
+      } else {
+        // Plain text / whitespace between equations — skip empty
+        if (part.trim()) out += part;
+      }
+    });
+    el.innerHTML = out;
+  });
+}
+
 /* ============================================================
-   BOOTSTRAP ? Initialize application when DOM is ready
+   BOOTSTRAP — Initialize application when DOM is ready
    ============================================================ */
 document.addEventListener('DOMContentLoaded', () => {
   new SimulatorApp();
+
+  // Directly render all $$...$$ blocks in NCTB worked examples
+  renderMathBlocks();
+
+  // Render any remaining \(...\) inline math (educational section)
+  if (window.renderMathInElement) {
+    renderMathInElement(document.body, {
+      delimiters: [
+        { left: '\\(', right: '\\)', display: false }
+      ],
+      throwOnError: false
+    });
+  }
 });
 
 

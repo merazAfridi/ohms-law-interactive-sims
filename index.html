@@ -11,6 +11,9 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Hind+Siliguri:wght@300;400;500;600;700&display=swap" rel="stylesheet">
 
+  <!-- KaTeX — mathematical formula rendering -->
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/katex.min.css" crossorigin="anonymous">
+
   <link rel="stylesheet" href="style.css">
 </head>
 <body>
@@ -79,12 +82,7 @@
             <span class="lang-bn">সার্কিট বোর্ড</span>
             <span class="lang-en">Circuit Board</span>
           </span>
-          <div class="zoom-controls">
-            <button id="btn-zoom-out" class="btn btn-sm" data-title-bn="ছোট করুন" data-title-en="Zoom out" title="ছোট করুন">−</button>
-            <span id="zoom-level">100%</span>
-            <button id="btn-zoom-in" class="btn btn-sm" data-title-bn="বড় করুন" data-title-en="Zoom in" title="বড় করুন">+</button>
-            <button id="btn-zoom-reset" class="btn btn-sm" data-title-bn="জুম রিসেট" data-title-en="Reset zoom" title="জুম রিসেট">⟲</button>
-          </div>
+          <!-- Zoom controls removed as the circuit board is now fixed -->
         </div>
         <div id="circuit-viewport" class="circuit-viewport">
           <svg id="circuit-svg" class="circuit-svg" viewBox="0 0 900 520" xmlns="http://www.w3.org/2000/svg">
@@ -295,7 +293,7 @@
               <span class="lang-en">Reset</span>
             </button>
             <button id="btn-randomize" class="btn btn-secondary" data-title-bn="এলোমেলো মান সেট করুন" data-title-en="Randomize circuit values">
-              <span class="lang-bn">র্যান্ডম</span>
+              <span class="lang-bn">এলোমেলো নির্বাচন</span>
               <span class="lang-en">Randomize</span>
             </button>
           </div>
@@ -481,9 +479,11 @@
               <span class="lang-en">A conductor has a potential difference of 220 V across its ends and a resistance of 110 Ω. What current flows through the conductor?</span>
             </p>
             <p><strong><span class="lang-bn">সমাধান:</span><span class="lang-en">Solution:</span></strong></p>
-            <pre class="math-block">I = V / R
-I = 220 / 110
-I = 2 A</pre>
+            <div class="math-block">
+              $$I = \frac{V}{R}$$
+              $$I = \frac{220}{110}$$
+              $$I = 2 \text{ A}$$
+            </div>
             <p>
               <strong><span class="lang-bn">উত্তর:</span><span class="lang-en">Answer:</span></strong>
               <span class="lang-bn">পরিবাহীর মধ্য দিয়ে 2 A তড়িৎ প্রবাহিত হবে।</span>
@@ -498,9 +498,11 @@ I = 2 A</pre>
               <span class="lang-en">A heater carries a current of 5 A and the voltage across it is 220 V. What is its electrical power?</span>
             </p>
             <p><strong><span class="lang-bn">সমাধান:</span><span class="lang-en">Solution:</span></strong></p>
-            <pre class="math-block">P = V × I
-P = 220 × 5
-P = 1100 W</pre>
+            <div class="math-block">
+              $$P = V \times I$$
+              $$P = 220 \times 5$$
+              $$P = 1100 \text{ W}$$
+            </div>
             <p>
               <strong><span class="lang-bn">উত্তর:</span><span class="lang-en">Answer:</span></strong>
               <span class="lang-bn">হিটারটির ক্ষমতা 1100 W বা 1.1 kW।</span>
@@ -515,11 +517,13 @@ P = 1100 W</pre>
               <span class="lang-en">Two resistors of 10 Ω and 20 Ω are connected in series to a 12 V battery. What is the total current in the circuit?</span>
             </p>
             <p><strong><span class="lang-bn">সমাধান:</span><span class="lang-en">Solution:</span></strong></p>
-            <pre class="math-block">R_s = R₁ + R₂
-R_s = 10 + 20 = 30 Ω
-I = V / R_s
-I = 12 / 30
-I = 0.4 A</pre>
+            <div class="math-block">
+              $$R_s = R_1 + R_2$$
+              $$R_s = 10 + 20 = 30\,\Omega$$
+              $$I = \frac{V}{R_s}$$
+              $$I = \frac{12}{30}$$
+              $$I = 0.4 \text{ A}$$
+            </div>
             <p>
               <strong><span class="lang-bn">উত্তর:</span><span class="lang-en">Answer:</span></strong>
               <span class="lang-bn">বর্তনীর মোট তড়িৎ প্রবাহ 0.4 A।</span>
@@ -534,10 +538,12 @@ I = 0.4 A</pre>
               <span class="lang-en">Three resistors of 5 Ω, 10 Ω, and 15 Ω are connected in series to a 60 V source. What is the voltage across the 10 Ω resistor?</span>
             </p>
             <p><strong><span class="lang-bn">সমাধান:</span><span class="lang-en">Solution:</span></strong></p>
-            <pre class="math-block">R_s = 5 + 10 + 15 = 30 Ω
-I = V / R_s = 60 / 30 = 2 A
-V₁₀ = I × R₁₀
-V₁₀ = 2 × 10 = 20 V</pre>
+            <div class="math-block">
+              $$R_s = 5 + 10 + 15 = 30\,\Omega$$
+              $$I = \frac{V}{R_s} = \frac{60}{30} = 2 \text{ A}$$
+              $$V_{10} = I \times R_{10}$$
+              $$V_{10} = 2 \times 10 = 20 \text{ V}$$
+            </div>
             <p>
               <strong><span class="lang-bn">উত্তর:</span><span class="lang-en">Answer:</span></strong>
               <span class="lang-bn">10 Ω রোধের দুই প্রান্তের বিভব পার্থক্য 20 V।</span>
@@ -552,10 +558,12 @@ V₁₀ = 2 × 10 = 20 V</pre>
               <span class="lang-en">A circuit has a 15 Ω resistor in series with an unknown resistor. If the total voltage is 100 V and the current is 4 A, what is the unknown resistance?</span>
             </p>
             <p><strong><span class="lang-bn">সমাধান:</span><span class="lang-en">Solution:</span></strong></p>
-            <pre class="math-block">R_s = V / I
-R_s = 100 / 4 = 25 Ω
-15 + R_x = 25
-R_x = 25 - 15 = 10 Ω</pre>
+            <div class="math-block">
+              $$R_s = \frac{V}{I}$$
+              $$R_s = \frac{100}{4} = 25\,\Omega$$
+              $$15 + R_x = 25$$
+              $$R_x = 25 - 15 = 10\,\Omega$$
+            </div>
             <p>
               <strong><span class="lang-bn">উত্তর:</span><span class="lang-en">Answer:</span></strong>
               <span class="lang-bn">অজানা রোধটির মান 10 Ω।</span>
@@ -571,6 +579,9 @@ R_x = 25 - 15 = 10 Ω</pre>
 
   </div><!-- end app -->
 
+  <!-- KaTeX JS — must load before script.js so katex is available at runtime -->
+  <script src="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/katex.min.js" crossorigin="anonymous"></script>
+  <script src="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/contrib/auto-render.min.js" crossorigin="anonymous"></script>
   <script src="script.js"></script>
 </body>
 </html>
