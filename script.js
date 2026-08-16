@@ -423,8 +423,10 @@ class ElectronAnimator {
 
     this.electrons.forEach(electron => {
       if (isActive) {
-        electron.progress += Config.ELECTRON_BASE_SPEED * speed * deltaTime;
-        if (electron.progress > 1) electron.progress -= 1;
+        // Real electrons drift opposite to conventional current (− to +),
+        // so they travel the path in reverse of the direction arrows.
+        electron.progress -= Config.ELECTRON_BASE_SPEED * speed * deltaTime;
+        if (electron.progress < 0) electron.progress += 1;
         const pos = this.getPositionOnPath(electron.progress);
         electron.element.setAttribute('cx', pos.x);
         electron.element.setAttribute('cy', pos.y);
