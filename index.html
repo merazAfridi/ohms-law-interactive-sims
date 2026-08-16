@@ -6,6 +6,10 @@
   <meta name="description" content="ওহমের সূত্র ইন্টারেক্টিভ সার্কিট সিমুলেটর — ভার্চুয়াল ইলেকট্রনিক্স ল্যাবরেটরি" data-desc-bn="ওহমের সূত্র ইন্টারেক্টিভ সার্কিট সিমুলেটর — ভার্চুয়াল ইলেকট্রনিক্স ল্যাবরেটরি" data-desc-en="Interactive Ohm's Law Circuit Simulator — Virtual Electronics Laboratory">
   <title>ওহমের সূত্র সার্কিট সিমুলেটর</title>
 
+  <!-- Favicon — 10 Minute School Origin Labs mark -->
+  <link rel="icon" type="image/svg+xml" href="favicon.svg">
+  <link rel="apple-touch-icon" href="favicon.svg">
+
   <!-- 10MS Fonts: Inter (English) + Hind Siliguri (Bangla) -->
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -23,57 +27,51 @@
     <!-- Header bar -->
     <header class="header">
       <div class="header-left">
-        <!-- V=IR brand mark -->
+        <!-- 10 Minute School Origin Labs brand mark -->
         <div class="logo" aria-hidden="true">
-          <svg viewBox="0 0 36 36" width="36" height="36">
-            <circle cx="18" cy="18" r="16" fill="none" stroke="#FFD600" stroke-width="2"/>
-            <text x="18" y="23" text-anchor="middle" font-size="10" fill="#FFD600" font-weight="800" font-family="Inter,sans-serif">V=IR</text>
-          </svg>
-        </div>
-        <div class="header-title-block">
-          <span class="header-eyebrow">
-            <span class="lang-bn">১০MS সিমুলেটর</span>
-            <span class="lang-en">10MS Simulator</span>
-          </span>
-          <h1 class="bn">
-            <span class="lang-bn">ওহমের সূত্র সার্কিট সিমুলেটর</span>
-            <span class="lang-en" style="font-family:'Inter',sans-serif;">Ohm's Law Circuit Simulator</span>
-          </h1>
-          <span class="subtitle bn">
-            <span class="lang-bn">ভার্চুয়াল ইলেকট্রনিক্স ল্যাবরেটরি</span>
-            <span class="lang-en">Virtual Electronics Laboratory</span>
-          </span>
+          <img class="logo-img" src="https://cdn.10minuteschool.com/images/svg/Origin%20Labs%20Black.svg" alt="Origin Labs" width="88" height="27">
         </div>
       </div>
       <div class="header-controls">
-        <!-- Language Switcher Button -->
-        <button id="btn-lang" class="btn btn-secondary" title="ভাষা পরিবর্তন করুন" aria-label="ভাষা পরিবর্তন করুন">
-          <span class="lang-bn" style="font-family:'Inter', sans-serif; font-size:12px; font-weight:700;">EN</span>
-          <span class="lang-en" style="font-family:'Hind Siliguri', sans-serif; font-size:12px; font-weight:700;">বাংলা</span>
+        <!-- Language Switcher -->
+        <div class="lang-switch" role="group" aria-label="ভাষা">
+          <button id="btn-lang-bn" class="lang-pill" data-lang-btn="bn">বাং</button>
+          <button id="btn-lang-en" class="lang-pill" data-lang-btn="en">EN</button>
+        </div>
+        <!-- Guided Tutorial Button -->
+        <button id="btn-tutorial" class="btn btn-tutorial" data-title-bn="টিউটোরিয়াল শুরু করুন" data-title-en="Start guided tutorial" aria-label="Tutorial">
+          <span class="tutorial-icon" aria-hidden="true">🧭</span>
+          <span class="tutorial-text">
+            <span class="lang-bn">টিউটোরিয়াল</span>
+            <span class="lang-en">Tutorial</span>
+          </span>
         </button>
-        <button id="btn-theme" class="btn btn-icon" title="থিম পরিবর্তন" aria-label="থিম পরিবর্তন">
-          <span class="icon-sun">☀</span>
-          <span class="icon-moon">🌙</span>
-        </button>
-        <button id="btn-fullscreen" class="btn btn-icon" title="ফুলস্ক্রিন" aria-label="ফুলস্ক্রিন">⛶</button>
-        <button id="btn-screenshot" class="btn btn-icon" title="স্ক্রিনশট" aria-label="স্ক্রিনশট">📷</button>
-        <button id="btn-export" class="btn btn-secondary" data-title-bn="সেটিংস এক্সপোর্ট করুন" data-title-en="Export Settings as JSON">
-          <span class="lang-bn">এক্সপোর্ট</span>
-          <span class="lang-en">Export</span>
-        </button>
-        <button id="btn-import" class="btn btn-secondary" data-title-bn="সেটিংস ইম্পোর্ট করুন" data-title-en="Import Settings from JSON">
-          <span class="lang-bn">ইম্পোর্ট</span>
-          <span class="lang-en">Import</span>
-        </button>
-        <input type="file" id="import-file" accept=".json" hidden>
       </div>
     </header>
+
+    <!-- Hero title block -->
+    <div class="hero">
+      <span class="hero-eyebrow">
+        <span class="lang-bn">১০MS সিমুলেটর</span>
+        <span class="lang-en">10MS Simulator</span>
+      </span>
+      <h1 class="hero-title bn">
+        <span class="lang-bn">ওহমের সূত্র সার্কিট সিমুলেটর</span>
+        <span class="lang-en" style="font-family:'Inter',sans-serif;">Ohm's Law Circuit Simulator</span>
+      </h1>
+      <span class="hero-subtitle bn">
+        <span class="lang-bn">ভার্চুয়াল ইলেকট্রনিক্স ল্যাবরেটরি</span>
+        <span class="lang-en">Virtual Electronics Laboratory</span>
+      </span>
+    </div>
 
     <!-- Safety alert banner -->
     <div id="safety-banner" class="safety-banner hidden" role="alert"></div>
 
     <!-- Primary content area -->
     <main class="main-content">
+
+      <div class="circuit-column">
 
       <!-- Circuit visualization panel -->
       <section class="circuit-panel" aria-label="Circuit board">
@@ -82,7 +80,14 @@
             <span class="lang-bn">সার্কিট বোর্ড</span>
             <span class="lang-en">Circuit Board</span>
           </span>
-          <!-- Zoom controls removed as the circuit board is now fixed -->
+          <div class="panel-toolbar-actions">
+            <button id="btn-theme" class="btn btn-icon" title="থিম পরিবর্তন" aria-label="থিম পরিবর্তন">
+              <span class="icon-sun">☀</span>
+              <span class="icon-moon">🌙</span>
+            </button>
+            <button id="btn-fullscreen" class="btn btn-icon" title="ফুলস্ক্রিন" aria-label="ফুলস্ক্রিন">⛶</button>
+            <button id="btn-screenshot" class="btn btn-icon" title="স্ক্রিনশট" aria-label="স্ক্রিনশট">📷</button>
+          </div>
         </div>
         <div id="circuit-viewport" class="circuit-viewport">
           <svg id="circuit-svg" class="circuit-svg" viewBox="0 0 900 520" xmlns="http://www.w3.org/2000/svg">
@@ -106,14 +111,8 @@
                 <stop offset="60%"  stop-color="#00bfff"/>
                 <stop offset="100%" stop-color="#0066cc" stop-opacity="0"/>
               </radialGradient>
-              <!-- Wire gradient -->
-              <linearGradient id="wire-grad" x1="0%" y1="0%" x2="100%" y2="0%">
-                <stop offset="0%"   class="wire-stop-a"/>
-                <stop offset="100%" class="wire-stop-b"/>
-              </linearGradient>
             </defs>
 
-            <!-- Circuit group (transformed for zoom) -->
             <g id="circuit-group">
 
               <!-- Wire paths (clockwise flow) -->
@@ -137,6 +136,12 @@
                 <!-- Voltmeter branches -->
                 <path id="wire-volt-top"    class="wire wire-volt" d="M 510 130 L 510 200"/>
                 <path id="wire-volt-bot"    class="wire wire-volt" d="M 510 390 L 510 260"/>
+              </g>
+
+              <!-- Junction dots — mark real electrical T-connections (voltmeter tap points) -->
+              <g id="junctions-group">
+                <circle cx="510" cy="130" r="4" class="wire-node"/>
+                <circle cx="510" cy="390" r="4" class="wire-node"/>
               </g>
 
               <!-- Current direction arrows -->
@@ -166,7 +171,8 @@
                   <tspan class="lang-bn comp-label">ব্যাটারি</tspan>
                   <tspan class="lang-en comp-label">Battery</tspan>
                 </text>
-                <text x="100" y="290" id="battery-voltage-label" class="comp-value" text-anchor="middle">12.0 V</text>
+                <rect x="70" y="278" width="60" height="20" rx="3" class="digital-display"/>
+                <text x="100" y="292" id="battery-voltage-label" class="digital-text" text-anchor="middle">12.0 V</text>
                 <text x="72"  y="185" class="terminal-label pos">+</text>
                 <text x="72"  y="255" class="terminal-label neg">−</text>
                 <circle id="battery-glow" cx="100" cy="220" r="55" class="battery-glow"/>
@@ -241,17 +247,29 @@
 
               <!-- Light Bulb component -->
               <g id="bulb" class="component" data-tooltip-bn="উজ্জ্বলতা শক্তি ক্ষয়ের উপর নির্ভর করে" data-tooltip-en="Brightness depends on power dissipation">
-                <circle cx="700" cy="130" r="28" class="bulb-glass"/>
-                <circle id="bulb-glow" cx="700" cy="130" r="40" class="bulb-glow"/>
+                <circle id="bulb-glow" cx="700" cy="130" r="34" class="bulb-glow"/>
+                <!-- Glass envelope -->
+                <path id="bulb-glass-path" class="bulb-glass" d="M700,105
+                  C684,105 672,116 672,132
+                  C672,144 679,151 688,156
+                  L712,156
+                  C721,151 728,144 728,132
+                  C728,116 716,105 700,105 Z"/>
                 <!-- Filament -->
-                <path id="bulb-filament" d="M 690 125 Q 700 140 710 125" class="bulb-filament"/>
-                <path d="M 688 125 L 688 118 M 712 125 L 712 118" class="bulb-leads"/>
-                <rect x="686" y="115" width="28" height="6" rx="2" class="bulb-base"/>
-                <text x="700" y="102" text-anchor="middle">
+                <path id="bulb-filament" d="M688,144 L694,120 L700,144 L706,120 L712,144" class="bulb-filament"/>
+                <path d="M688,144 L688,156 M712,144 L712,156" class="bulb-leads"/>
+                <!-- Edison screw base -->
+                <rect x="688" y="156" width="24" height="16" class="bulb-base"/>
+                <line x1="688" y1="161" x2="712" y2="161" class="bulb-thread"/>
+                <line x1="688" y1="166" x2="712" y2="166" class="bulb-thread"/>
+                <line x1="688" y1="171" x2="712" y2="171" class="bulb-thread"/>
+                <path d="M693,172 L707,172 L705,177 Q700,180 695,177 Z" class="bulb-base"/>
+                <text x="700" y="90" text-anchor="middle">
                   <tspan class="lang-bn comp-label">বাল্ব</tspan>
                   <tspan class="lang-en comp-label">Light Bulb</tspan>
                 </text>
-                <text id="bulb-brightness-label" x="700" y="175" class="comp-value" text-anchor="middle">0%</text>
+                <rect x="675" y="182" width="50" height="20" rx="3" class="digital-display"/>
+                <text id="bulb-brightness-label" x="700" y="196" class="digital-text" text-anchor="middle">0%</text>
               </g>
 
             </g><!-- end circuit-group -->
@@ -259,11 +277,50 @@
         </div>
       </section>
 
+      <!-- Graphs section -->
+      <section class="graphs-section card">
+        <div class="graphs-header">
+          <h2 class="bn">
+            <span class="lang-bn">লাইভ গ্রাফ</span>
+            <span class="lang-en">Live Graphs</span>
+          </h2>
+          <button id="btn-clear-graphs" class="btn btn-sm btn-secondary">
+            <span class="lang-bn">গ্রাফ মুছুন</span>
+            <span class="lang-en">Clear Graphs</span>
+          </button>
+        </div>
+        <div class="graphs-grid">
+          <div class="graph-container">
+            <h3 class="bn">
+              <span class="lang-bn">বিদ্যুৎ বনাম সময়</span>
+              <span class="lang-en">Current vs Time</span>
+            </h3>
+            <canvas id="graph-current" width="400" height="180"></canvas>
+          </div>
+          <div class="graph-container">
+            <h3 class="bn">
+              <span class="lang-bn">ভোল্টেজ বনাম সময়</span>
+              <span class="lang-en">Voltage vs Time</span>
+            </h3>
+            <canvas id="graph-voltage" width="400" height="180"></canvas>
+          </div>
+          <div class="graph-container">
+            <h3 class="bn">
+              <span class="lang-bn">শক্তি বনাম সময়</span>
+              <span class="lang-en">Power vs Time</span>
+            </h3>
+            <canvas id="graph-power" width="400" height="180"></canvas>
+          </div>
+        </div>
+      </section>
+
+      </div><!-- end circuit-column -->
+
       <!-- Controls and dashboard sidebar -->
       <aside class="sidebar">
 
-        <!-- User controls -->
-        <section class="control-panel card">
+      <!-- User controls -->
+      <section class="control-panel card">
           <h2 class="bn">
             <span class="lang-bn">নিয়ন্ত্রণ</span>
             <span class="lang-en">Controls</span>
@@ -273,16 +330,22 @@
             <label for="voltage-slider" class="bn">
               <span class="lang-bn">ভোল্টেজ</span>
               <span class="lang-en">Voltage</span>
-              <span id="voltage-display" class="control-value">12.0 V</span>
+              <span class="control-value-row">
+                <input type="number" id="voltage-input" class="control-value-input" min="0" max="1000" step="0.1" value="12.0" aria-label="Voltage">
+                <span class="control-unit">V</span>
+              </span>
             </label>
-            <input type="range" id="voltage-slider" min="0" max="24" step="0.1" value="12">
+            <input type="range" id="voltage-slider" min="0" max="1000" step="0.1" value="12">
           </div>
 
           <div class="control-group">
             <label for="resistance-slider" class="bn">
               <span class="lang-bn">রোধ</span>
               <span class="lang-en">Resistance</span>
-              <span id="resistance-display" class="control-value">100 Ω</span>
+              <span class="control-value-row">
+                <input type="number" id="resistance-input" class="control-value-input" min="0" max="1000" step="1" value="100" aria-label="Resistance">
+                <span class="control-unit">Ω</span>
+              </span>
             </label>
             <input type="range" id="resistance-slider" min="0" max="1000" step="1" value="100">
           </div>
@@ -292,7 +355,7 @@
               <span class="lang-bn">রিসেট</span>
               <span class="lang-en">Reset</span>
             </button>
-            <button id="btn-randomize" class="btn btn-secondary" data-title-bn="এলোমেলো মান সেট করুন" data-title-en="Randomize circuit values">
+            <button id="btn-randomize" class="btn btn-warning" data-title-bn="এলোমেলো মান সেট করুন" data-title-en="Randomize circuit values">
               <span class="lang-bn">এলোমেলো নির্বাচন</span>
               <span class="lang-en">Randomize</span>
             </button>
@@ -354,13 +417,6 @@
             </div>
             <div class="dash-item">
               <span class="dash-label">
-                <span class="lang-bn">ইলেকট্রন গতি</span>
-                <span class="lang-en">Electron Speed</span>
-              </span>
-              <span id="dash-electron-speed" class="dash-value">0.60×</span>
-            </div>
-            <div class="dash-item dash-full">
-              <span class="dash-label">
                 <span class="lang-bn">সুইচের অবস্থা</span>
                 <span class="lang-en">Switch State</span>
               </span>
@@ -382,43 +438,6 @@
 
       </aside>
     </main>
-
-    <!-- Graphs section -->
-    <section class="graphs-section card">
-      <div class="graphs-header">
-        <h2 class="bn">
-          <span class="lang-bn">লাইভ গ্রাফ</span>
-          <span class="lang-en">Live Graphs</span>
-        </h2>
-        <button id="btn-clear-graphs" class="btn btn-sm btn-secondary">
-          <span class="lang-bn">গ্রাফ মুছুন</span>
-          <span class="lang-en">Clear Graphs</span>
-        </button>
-      </div>
-      <div class="graphs-grid">
-        <div class="graph-container">
-          <h3 class="bn">
-            <span class="lang-bn">বিদ্যুৎ বনাম সময়</span>
-            <span class="lang-en">Current vs Time</span>
-          </h3>
-          <canvas id="graph-current" width="400" height="180"></canvas>
-        </div>
-        <div class="graph-container">
-          <h3 class="bn">
-            <span class="lang-bn">ভোল্টেজ বনাম সময়</span>
-            <span class="lang-en">Voltage vs Time</span>
-          </h3>
-          <canvas id="graph-voltage" width="400" height="180"></canvas>
-        </div>
-        <div class="graph-container">
-          <h3 class="bn">
-            <span class="lang-bn">শক্তি বনাম সময়</span>
-            <span class="lang-en">Power vs Time</span>
-          </h3>
-          <canvas id="graph-power" width="400" height="180"></canvas>
-        </div>
-      </div>
-    </section>
 
     <!-- Educational section -->
     <section class="education-section card">
@@ -474,7 +493,7 @@
         <div class="example-grid">
           <article class="example-card">
             <h4><span class="lang-bn">প্রশ্ন ১</span><span class="lang-en">Question 1</span></h4>
-            <p>
+            <p class="example-question">
               <span class="lang-bn">একটি পরিবাহীর দুই প্রান্তের বিভব পার্থক্য 220 V এবং এর রোধ 110 Ω। পরিবাহীর মধ্য দিয়ে কী পরিমাণ তড়িৎ প্রবাহিত হবে?</span>
               <span class="lang-en">A conductor has a potential difference of 220 V across its ends and a resistance of 110 Ω. What current flows through the conductor?</span>
             </p>
@@ -493,7 +512,7 @@
 
           <article class="example-card">
             <h4><span class="lang-bn">প্রশ্ন ২</span><span class="lang-en">Question 2</span></h4>
-            <p>
+            <p class="example-question">
               <span class="lang-bn">একটি বৈদ্যুতিক হিটারের মধ্য দিয়ে 5 A তড়িৎ প্রবাহিত হচ্ছে এবং এর দুই প্রান্তের বিভব পার্থক্য 220 V। হিটারটির বৈদ্যুতিক ক্ষমতা কত?</span>
               <span class="lang-en">A heater carries a current of 5 A and the voltage across it is 220 V. What is its electrical power?</span>
             </p>
@@ -512,7 +531,7 @@
 
           <article class="example-card">
             <h4><span class="lang-bn">প্রশ্ন ৩</span><span class="lang-en">Question 3</span></h4>
-            <p>
+            <p class="example-question">
               <span class="lang-bn">10 Ω এবং 20 Ω মানের দুটি রোধকে শ্রেণি সমবায়ে যুক্ত করে একটি 12 V ব্যাটারির সাথে যুক্ত করা হলো। বর্তনীর মোট তড়িৎ প্রবাহ কত?</span>
               <span class="lang-en">Two resistors of 10 Ω and 20 Ω are connected in series to a 12 V battery. What is the total current in the circuit?</span>
             </p>
@@ -533,7 +552,7 @@
 
           <article class="example-card">
             <h4><span class="lang-bn">প্রশ্ন ৪</span><span class="lang-en">Question 4</span></h4>
-            <p>
+            <p class="example-question">
               <span class="lang-bn">5 Ω, 10 Ω এবং 15 Ω এর তিনটি রোধ শ্রেণি সমবায়ে যুক্ত করে একটি 60 V উৎসের সাথে সংযুক্ত করা হলো। 10 Ω রোধের দুই প্রান্তের বিভব পার্থক্য কত?</span>
               <span class="lang-en">Three resistors of 5 Ω, 10 Ω, and 15 Ω are connected in series to a 60 V source. What is the voltage across the 10 Ω resistor?</span>
             </p>
@@ -553,7 +572,7 @@
 
           <article class="example-card">
             <h4><span class="lang-bn">প্রশ্ন ৫</span><span class="lang-en">Question 5</span></h4>
-            <p>
+            <p class="example-question">
               <span class="lang-bn">একটি বর্তনীতে 15 Ω রোধের সাথে একটি অজানা রোধ শ্রেণি সমবায়ে যুক্ত আছে। বর্তনীর মোট বিভব পার্থক্য 100 V এবং তড়িৎ প্রবাহ 4 A হলে, অজানা রোধটির মান কত?</span>
               <span class="lang-en">A circuit has a 15 Ω resistor in series with an unknown resistor. If the total voltage is 100 V and the current is 4 A, what is the unknown resistance?</span>
             </p>
@@ -576,6 +595,50 @@
 
     <!-- Tooltip element -->
     <div id="tooltip" class="tooltip hidden" role="tooltip"></div>
+
+    <!-- Guided tutorial overlay -->
+    <div id="tutorial-overlay" class="tutorial-overlay hidden" role="dialog" aria-modal="true" aria-label="Guided tutorial">
+      <div id="tutorial-spotlight" class="tutorial-spotlight"></div>
+      <div id="tutorial-box" class="tutorial-box">
+        <div class="tutorial-box-header">
+          <span id="tutorial-step-badge" class="tutorial-step-badge">1/11</span>
+          <button id="tutorial-close" class="tutorial-close" aria-label="Close tutorial">&times;</button>
+        </div>
+        <h3 id="tutorial-title" class="tutorial-title"></h3>
+        <p id="tutorial-desc" class="tutorial-desc"></p>
+        <div id="tutorial-progress" class="tutorial-progress"></div>
+        <div class="tutorial-actions">
+          <button id="tutorial-skip" class="tutorial-skip-btn">
+            <span class="lang-bn">এড়িয়ে যান</span>
+            <span class="lang-en">Skip</span>
+          </button>
+          <div class="tutorial-nav">
+            <button id="tutorial-back" class="btn btn-sm btn-secondary">
+              <span class="lang-bn">পেছনে</span>
+              <span class="lang-en">Back</span>
+            </button>
+            <button id="tutorial-next" class="btn btn-sm btn-primary">
+              <span id="tutorial-next-bn" class="lang-bn">পরবর্তী</span>
+              <span id="tutorial-next-en" class="lang-en">Next</span>
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Feedback CTA -->
+    <button id="btn-feedback" class="feedback-cta" aria-label="তোমার মতামত জানাও" title="তোমার মতামত জানাও">
+      <span class="feedback-icon" aria-hidden="true">💬</span>
+      <span class="feedback-text">তোমার মতামত জানাও</span>
+    </button>
+
+    <!-- Feedback form modal -->
+    <div id="feedback-overlay" class="feedback-overlay hidden" role="dialog" aria-modal="true" aria-label="Feedback form">
+      <div class="feedback-modal">
+        <button id="feedback-close" class="feedback-modal-close" aria-label="Close">&times;</button>
+        <iframe id="feedback-iframe" class="feedback-iframe" title="Feedback Form" src="" loading="lazy"></iframe>
+      </div>
+    </div>
 
   </div><!-- end app -->
 

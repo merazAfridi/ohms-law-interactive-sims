@@ -114,7 +114,7 @@
   --meter-body:   var(--gray-700);
   --digital-bg:   #0F172A;
   --digital-text: #22D3EE;
-  --bulb-off:     var(--gray-300);
+  --bulb-off:     #D1D5DB;
   --bulb-on:      #FBBF24;
   --electron-color: #00BFFF;
   --battery-fill: rgba(28, 171, 85, 0.35);
@@ -149,10 +149,17 @@
 /* ---------- Dark theme: replace red accents with blue ---------- */
 
 /* Control value pill (voltage/resistance display) */
-[data-theme="dark"] .control-value {
-  color: #38BDF8;
+[data-theme="dark"] .control-value-row {
   background: rgba(56, 189, 248, 0.10);
   border-color: rgba(56, 189, 248, 0.22);
+}
+[data-theme="dark"] .control-value-row:focus-within {
+  border-color: #38BDF8;
+  box-shadow: 0 0 0 2px rgba(56, 189, 248, 0.18);
+}
+[data-theme="dark"] .control-value-input,
+[data-theme="dark"] .control-unit {
+  color: #38BDF8;
 }
 
 /* Calculations box top border + heading */
@@ -170,12 +177,6 @@
 }
 [data-theme="dark"] .circuit-panel:hover {
   border-color: rgba(56, 189, 248, 0.25);
-}
-
-/* Zoom buttons */
-[data-theme="dark"] .zoom-controls .btn-sm:hover {
-  border-color: #38BDF8;
-  color: #38BDF8;
 }
 
 /* Sidebar / graphs secondary buttons */
@@ -289,7 +290,7 @@ body {
 }
 
 /* ============================================================
-   HEADER — 10MS dark brand header
+   HEADER — light utility bar (logo + language + tutorial)
    ============================================================ */
 .header {
   display: flex;
@@ -297,38 +298,12 @@ body {
   justify-content: space-between;
   flex-wrap: wrap;
   gap: var(--s-3);
-  padding: var(--s-4) var(--s-6);
-  margin: var(--s-4) 0 var(--s-3);
-  background: linear-gradient(135deg, #1A0005 0%, #931212 100%);
-  color: var(--ten-white);
+  padding: var(--s-3) var(--s-5);
+  margin: var(--s-4) 0 0;
+  background: var(--surface-card);
+  border: 1px solid var(--border);
   border-radius: var(--r-xl);
-  box-shadow: var(--sh-raised);
-  position: relative;
-  overflow: hidden;
-}
-
-/* Geo watermark decoration */
-.header::before {
-  content: '';
-  position: absolute;
-  right: -40px;
-  top: -40px;
-  width: 180px;
-  height: 180px;
-  border-radius: 50%;
-  border: 2px solid rgba(255,255,255,0.08);
-  pointer-events: none;
-}
-.header::after {
-  content: '';
-  position: absolute;
-  right: 20px;
-  top: 10px;
-  width: 90px;
-  height: 90px;
-  border-radius: 50%;
-  border: 1.5px solid rgba(255,255,255,0.06);
-  pointer-events: none;
+  box-shadow: var(--sh-card);
 }
 
 .header-left {
@@ -338,59 +313,105 @@ body {
   flex-wrap: wrap;
 }
 
-.header-left h1 {
-  font-family: var(--font-bangla);
-  font-size: var(--fs-h2);
-  font-weight: 700;
-  letter-spacing: -0.2px;
-  color: var(--ten-white);
-  line-height: 1.25;
-}
-
-.subtitle {
-  font-size: var(--fs-caption);
-  opacity: 0.75;
-  padding-left: var(--s-2);
-  border-left: 2px solid rgba(255,255,255,0.25);
-  font-family: var(--font-bangla);
-  line-height: 1.5;
-  letter-spacing: 0.01em;
-}
-
 /* Logo / brand mark */
 .logo {
-  color: #FFD600;
   flex-shrink: 0;
-}
-
-/* Eyebrow pill */
-.header-eyebrow {
-  display: inline-flex;
-  align-items: center;
-  gap: var(--s-1);
-  padding: 3px 10px;
-  background: rgba(232,0,29,0.25);
-  border: 1px solid rgba(232,0,29,0.5);
-  border-radius: var(--r-pill);
-  font-size: var(--fs-micro);
-  font-weight: 700;
-  letter-spacing: 0.05em;
-  color: #FFD600;
-  text-transform: uppercase;
-  margin-bottom: var(--s-1);
-}
-
-.header-title-block {
   display: flex;
-  flex-direction: column;
-  gap: 2px;
+  align-items: center;
+}
+
+.logo-img {
+  height: 27px;
+  width: auto;
+  display: block;
 }
 
 .header-controls {
   display: flex;
   align-items: center;
-  gap: var(--s-2);
+  gap: var(--s-3);
   flex-wrap: wrap;
+}
+
+/* Language segmented control */
+.lang-switch {
+  display: flex;
+  align-items: center;
+  background: var(--gray-100);
+  border-radius: var(--r-pill);
+  padding: 3px;
+  gap: 2px;
+}
+[data-theme="dark"] .lang-switch {
+  background: #0F172A;
+}
+
+.lang-pill {
+  border: none;
+  background: transparent;
+  padding: 7px 16px;
+  border-radius: var(--r-pill);
+  font-family: var(--font-sans);
+  font-size: var(--fs-caption);
+  font-weight: 700;
+  color: var(--fg-3);
+  cursor: pointer;
+  transition: background var(--dur-base) var(--ease-out),
+              color var(--dur-base) var(--ease-out);
+}
+.lang-pill.active {
+  background: var(--success);
+  color: var(--ten-white);
+}
+.lang-pill:not(.active):hover {
+  color: var(--fg-1);
+}
+
+/* ============================================================
+   HERO — page title block, below the utility header
+   ============================================================ */
+.hero {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  gap: var(--s-2);
+  padding: var(--s-6) var(--s-4) var(--s-3);
+}
+
+.hero-eyebrow {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--s-1);
+  padding: 4px 14px;
+  background: #FFEBEC;
+  border: 1px solid rgba(232,0,29,0.25);
+  border-radius: var(--r-pill);
+  font-family: var(--font-bangla);
+  font-size: var(--fs-caption);
+  font-weight: 700;
+  letter-spacing: 0.02em;
+  color: var(--ten-red);
+}
+[data-theme="dark"] .hero-eyebrow {
+  background: rgba(232,0,29,0.14);
+  border-color: rgba(232,0,29,0.35);
+}
+
+.hero-title {
+  font-family: var(--font-bangla);
+  font-size: var(--fs-display);
+  font-weight: 800;
+  letter-spacing: -0.2px;
+  color: var(--ten-red);
+  line-height: 1.3;
+}
+
+.hero-subtitle {
+  font-family: var(--font-bangla);
+  font-size: var(--fs-body-sm);
+  color: var(--fg-3);
+  letter-spacing: 0.01em;
 }
 
 /* ============================================================
@@ -499,6 +520,21 @@ body {
 [data-theme="dark"] .icon-sun { display: none; }
 [data-theme="light"] .icon-moon { display: none; }
 
+/* Tutorial trigger button */
+.btn-tutorial {
+  background: linear-gradient(135deg, #931212 0%, #5A0B0B 100%);
+  border: 1px solid var(--ten-red-deep);
+  color: var(--ten-white);
+  font-weight: 700;
+}
+.btn-tutorial:hover {
+  background: linear-gradient(135deg, #A51E1E 0%, #6E0E0E 100%);
+}
+.tutorial-icon {
+  font-size: 1rem;
+  line-height: 1;
+}
+
 /* ============================================================
    SAFETY BANNER
    ============================================================ */
@@ -526,9 +562,9 @@ body {
   border: 2px solid var(--warn);
 }
 .safety-banner.warning-high-voltage {
-  background: #FEFCE8;
-  color: #854D0E;
-  border: 2px solid #EAB308;
+  background: #FFF1F2;
+  color: #9F1239;
+  border: 2px solid #E11D48;
 }
 
 [data-theme="dark"] .safety-banner.warning-short {
@@ -540,8 +576,8 @@ body {
   color: #FDBA74;
 }
 [data-theme="dark"] .safety-banner.warning-high-voltage {
-  background: #422006;
-  color: #FDE047;
+  background: #4C0519;
+  color: #FDA4AF;
 }
 
 @keyframes pulse-warning {
@@ -557,6 +593,22 @@ body {
   grid-template-columns: 1fr 340px;
   gap: var(--s-4);
   margin-bottom: var(--s-4);
+  align-items: start;
+}
+
+/* Desktop: two independently-sized stacks side by side — each column's
+   height is driven only by its own content, not the other column's. */
+.circuit-column {
+  display: flex;
+  flex-direction: column;
+  gap: var(--s-4);
+  min-width: 0;
+}
+.sidebar {
+  display: flex;
+  flex-direction: column;
+  gap: var(--s-4);
+  min-width: 0;
 }
 
 /* ============================================================
@@ -623,6 +675,8 @@ body {
   display: flex;
   align-items: center;
   justify-content: space-between;
+  flex-wrap: wrap;
+  gap: var(--s-2);
   padding: var(--s-3) var(--s-4);
   background: var(--gray-50);
   border-bottom: 1px solid var(--border);
@@ -640,43 +694,49 @@ body {
   letter-spacing: 0.01em;
 }
 
-.zoom-controls {
+/* Utility actions relocated from the header into the panel toolbar */
+.panel-toolbar-actions {
   display: flex;
   align-items: center;
   gap: var(--s-2);
+  flex-wrap: wrap;
 }
 
-.zoom-controls .btn-sm {
+.panel-toolbar-actions .btn-icon {
+  width: 32px;
+  height: 32px;
+  min-height: 32px;
+  font-size: 0.95rem;
+  border-radius: var(--r-xs);
   background: var(--surface-card);
   color: var(--fg-2);
   border: 1px solid var(--border);
-  min-width: 32px;
 }
-.zoom-controls .btn-sm:hover {
+.panel-toolbar-actions .btn-icon:hover {
   border-color: var(--ten-red);
   color: var(--ten-red);
+  background: #FFF5F6;
 }
-
-#zoom-level {
-  font-size: var(--fs-caption);
-  font-weight: 600;
-  min-width: 45px;
-  text-align: center;
-  color: var(--fg-2);
-  font-family: var(--font-mono);
+[data-theme="dark"] .panel-toolbar-actions .btn-icon:hover {
+  border-color: #38BDF8;
+  color: #38BDF8;
+  background: rgba(56,189,248,0.08);
 }
 
 .circuit-viewport {
   overflow: hidden;
-  background: var(--gray-50);
+  background-color: #ecf3f9;
+  background-image: radial-gradient(circle, rgba(90, 112, 145, 0.4) 1.6px, transparent 1.6px);
+  background-size: 22px 22px;
   cursor: default;
   position: relative;
   min-height: 400px;
-  transition: background var(--dur-slow) var(--ease-out);
+  transition: background-color var(--dur-slow) var(--ease-out);
 }
 
 [data-theme="dark"] .circuit-viewport {
-  background: #0F172A;
+  background-color: #0F172A;
+  background-image: radial-gradient(circle, rgba(100,116,139,0.4) 1px, transparent 1px);
 }
 
 .circuit-viewport:active {
@@ -709,19 +769,40 @@ body {
   opacity: 0.7;
 }
 
-.wire-stop-a { stop-color: var(--wire-color); }
-.wire-stop-b { stop-color: var(--wire-color); }
-
 .arrow {
   fill: var(--success);
   opacity: 0.65;
   transition: opacity var(--dur-base);
 }
 
+/* Junction dots — mark genuine electrical T-connections, like a real schematic */
+.wire-node {
+  fill: var(--gray-700);
+  stroke: var(--bg);
+  stroke-width: 1.5;
+}
+[data-theme="dark"] .wire-node {
+  fill: var(--gray-300);
+}
+
 .comp-body {
   fill: var(--comp-body);
   stroke: var(--border);
   stroke-width: 1.5;
+}
+
+/* Interactive feedback — every component lifts slightly on hover */
+.component {
+  transition: filter var(--dur-base) var(--ease-out),
+              transform var(--dur-base) var(--ease-out);
+  transform-box: fill-box;
+  transform-origin: center;
+}
+.component:hover {
+  filter: brightness(1.08);
+}
+.component.clickable:hover {
+  transform: scale(1.04);
 }
 
 /* Bangla primary label */
@@ -731,15 +812,6 @@ body {
   font-family: 'Hind Siliguri', sans-serif;
   font-weight: 600;
   letter-spacing: 0.01em;
-}
-
-/* English secondary label */
-.comp-label-en {
-  fill: var(--fg-muted);
-  font-size: 9px;
-  font-family: 'Inter', sans-serif;
-  font-weight: 500;
-  opacity: 0.8;
 }
 
 /* Live value display */
@@ -836,7 +908,11 @@ body {
   stroke-width: 2;
   stroke-linecap: round;
   transition: transform 150ms var(--ease-out);
-  transform-origin: center;
+  /* The rotate(angle, cx, cy) attribute set in JS already bakes in its own
+     pivot — a non-zero transform-origin here would offset that pivot a
+     second time (relative to the whole SVG viewport) and fling the needle
+     far outside the meter face. Keep it at the origin so it's a no-op. */
+  transform-origin: 0 0;
 }
 
 .meter-pivot { fill: var(--ten-red); }
@@ -895,6 +971,7 @@ body {
   stroke: var(--gray-500);
   stroke-width: 2;
   stroke-linecap: round;
+  stroke-linejoin: round;
   transition: stroke var(--dur-base), filter var(--dur-base);
 }
 
@@ -907,6 +984,16 @@ body {
   fill: var(--gray-500);
   stroke: var(--border);
   stroke-width: 1;
+  stroke-linejoin: round;
+}
+
+.bulb-thread {
+  stroke: rgba(0, 0, 0, 0.3);
+  stroke-width: 1;
+  pointer-events: none;
+}
+[data-theme="dark"] .bulb-thread {
+  stroke: rgba(0, 0, 0, 0.45);
 }
 
 /* Electrons */
@@ -941,15 +1028,47 @@ body {
   letter-spacing: 0.01em;
 }
 
-.control-value {
+.control-value-row {
+  display: inline-flex;
+  align-items: center;
+  background: rgba(232,0,29,0.07);
+  border-radius: var(--r-xs);
+  border: 1px solid rgba(232,0,29,0.15);
+  padding: 2px 8px 2px 4px;
+  transition: border-color var(--dur-base) var(--ease-out),
+              box-shadow var(--dur-base) var(--ease-out);
+}
+.control-value-row:focus-within {
+  border-color: var(--ten-red);
+  box-shadow: 0 0 0 2px rgba(232,0,29,0.15);
+}
+
+.control-value-input {
+  width: 3.6em;
+  border: none;
+  background: transparent;
   color: var(--ten-red);
   font-family: var(--font-mono);
   font-weight: 700;
   font-size: var(--fs-body-sm);
-  background: rgba(232,0,29,0.07);
-  padding: 2px 8px;
-  border-radius: var(--r-xs);
-  border: 1px solid rgba(232,0,29,0.15);
+  text-align: right;
+  padding: 2px 2px;
+  -moz-appearance: textfield;
+}
+.control-value-input:focus {
+  outline: none;
+}
+.control-value-input::-webkit-outer-spin-button,
+.control-value-input::-webkit-inner-spin-button {
+  -webkit-appearance: none;
+  margin: 0;
+}
+
+.control-unit {
+  color: var(--ten-red);
+  font-family: var(--font-mono);
+  font-weight: 700;
+  font-size: var(--fs-body-sm);
 }
 
 /* Range slider — 10MS green thumb */
@@ -1035,10 +1154,6 @@ input[type="range"]:focus {
   border-color: var(--border-strong);
 }
 
-.dash-item.dash-full {
-  grid-column: 1 / -1;
-}
-
 .dash-label {
   display: block;
   font-family: var(--font-bangla);
@@ -1108,10 +1223,6 @@ input[type="range"]:focus {
 /* ============================================================
    GRAPHS SECTION
    ============================================================ */
-.graphs-section {
-  margin-bottom: var(--s-4);
-}
-
 .graphs-header {
   display: flex;
   justify-content: space-between;
@@ -1125,7 +1236,7 @@ input[type="range"]:focus {
 
 .graphs-grid {
   display: grid;
-  grid-template-columns: repeat(3, 1fr);
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
   gap: var(--s-4);
 }
 
@@ -1278,6 +1389,14 @@ input[type="range"]:focus {
   gap: var(--s-4);
 }
 
+/* All 5 NCTB examples on one row at desktop widths, instead of the 5th
+   wrapping to its own line once auto-fit only fits 4 per row. */
+@media (min-width: 1300px) {
+  .example-grid {
+    grid-template-columns: repeat(5, 1fr);
+  }
+}
+
 .example-card {
   background: var(--surface-card);
   border: 1px solid var(--border);
@@ -1298,6 +1417,11 @@ input[type="range"]:focus {
   color: var(--fg-2);
 }
 
+.example-question {
+  font-weight: 700;
+  color: var(--fg-1);
+}
+
 .math-block {
   display: block;
   width: 100%;
@@ -1306,7 +1430,7 @@ input[type="range"]:focus {
   background: rgba(255,255,255,0.65);
   border-radius: var(--r-sm);
   border: 1px solid rgba(148,163,184,0.25);
-  font-size: 1rem;
+  font-size: 0.88rem;
   line-height: 1.8;
   text-align: center;
   overflow-x: auto;
@@ -1368,22 +1492,39 @@ input[type="range"]:focus {
    ============================================================ */
 @media (max-width: 1200px) {
   .main-content {
-    grid-template-columns: 1fr;
+    display: flex;
+    flex-direction: column;
+    gap: var(--s-4);
   }
-  .graphs-grid {
-    grid-template-columns: 1fr;
+  /* Unwrap both column groups so their children become direct flex items
+     of .main-content — lets circuit/controls/graphs/dashboard reorder
+     freely via `order` without duplicating any markup. */
+  .circuit-column,
+  .sidebar {
+    display: contents;
   }
+  /* Flex items default to min-width:auto (sized to content), not 0 — the
+     min-width:0 on the now-invisible wrapper divs above doesn't reach these
+     actual items, so without this each card was clamped to its intrinsic
+     content width instead of stretching to fill the row. */
+  .circuit-panel,
+  .control-panel,
+  .graphs-section,
+  .dashboard {
+    min-width: 0;
+    width: 100%;
+  }
+  .circuit-panel   { order: 1; }
+  .control-panel   { order: 2; }
+  .graphs-section  { order: 3; }
+  .dashboard       { order: 4; }
 }
 
 @media (max-width: 768px) {
-  .header {
-    flex-direction: column;
-    align-items: flex-start;
+  .hero-title {
+    font-size: var(--fs-h1);
   }
-  .header-left h1 {
-    font-size: var(--fs-h3);
-  }
-  .subtitle {
+  .hero-subtitle {
     display: none;
   }
   .education-grid {
@@ -1392,8 +1533,32 @@ input[type="range"]:focus {
   .dashboard-grid {
     grid-template-columns: 1fr;
   }
+  .graphs-grid {
+    grid-template-columns: 1fr;
+  }
+  /* Circuit fits fully on screen (no scrolling). To keep it readable at
+     the smaller scale, drop the decorative grid + direction arrows and
+     thicken the wires so the remaining detail reads clearly. The min-height
+     floors below are dropped too — otherwise the fitted (shorter) SVG gets
+     padded out to 400px with empty space instead of using its full width. */
   .circuit-viewport {
-    min-height: 280px;
+    background-image: none;
+    min-height: 0;
+  }
+  .circuit-svg {
+    min-height: 0;
+  }
+  .arrows-group {
+    display: none;
+  }
+  .wire {
+    stroke-width: 5;
+  }
+  .resistor-zigzag {
+    stroke-width: 4;
+  }
+  .bulb-filament {
+    stroke-width: 3;
   }
 }
 
@@ -1401,15 +1566,308 @@ input[type="range"]:focus {
   .app {
     padding: 0 var(--s-2) var(--s-4);
   }
-  .header-controls {
-    width: 100%;
-    justify-content: flex-start;
-  }
   .control-row {
     flex-direction: column;
   }
   .education-grid {
     grid-template-columns: 1fr;
+  }
+
+  /* Keep logo + language switch + tutorial button on one line */
+  .header {
+    flex-wrap: nowrap;
+    padding: var(--s-2) var(--s-3);
+    gap: var(--s-2);
+  }
+  .logo-img {
+    height: 22px;
+  }
+  .header-controls {
+    gap: var(--s-2);
+    flex-shrink: 0;
+  }
+  .lang-switch {
+    padding: 2px;
+  }
+  .lang-pill {
+    padding: 6px 10px;
+    font-size: 11px;
+  }
+  .btn-tutorial {
+    padding: 8px 10px;
+  }
+  .tutorial-text {
+    display: none;
+  }
+}
+
+/* ============================================================
+   GUIDED TUTORIAL
+   ============================================================ */
+.tutorial-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 2000;
+}
+.tutorial-overlay.hidden {
+  display: none;
+}
+
+.tutorial-spotlight {
+  position: fixed;
+  border-radius: var(--r-md);
+  border: 2px solid var(--ten-red);
+  box-shadow: 0 0 0 9999px rgba(4,6,10,0.68), 0 0 24px rgba(232,0,29,0.35);
+  pointer-events: none;
+  z-index: 2001;
+  transition: top var(--dur-slow) var(--ease-out),
+              left var(--dur-slow) var(--ease-out),
+              width var(--dur-slow) var(--ease-out),
+              height var(--dur-slow) var(--ease-out);
+}
+
+.tutorial-box {
+  position: fixed;
+  z-index: 2002;
+  width: min(340px, calc(100vw - 24px));
+  background: var(--surface-card);
+  color: var(--fg-1);
+  border-radius: var(--r-lg);
+  box-shadow: var(--sh-raised), 0 12px 32px rgba(0,0,0,0.28);
+  padding: var(--s-4);
+  transition: top var(--dur-slow) var(--ease-out),
+              left var(--dur-slow) var(--ease-out);
+}
+
+.tutorial-box-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: var(--s-3);
+}
+
+.tutorial-step-badge {
+  display: inline-flex;
+  align-items: center;
+  padding: 2px 10px;
+  background: var(--ten-red);
+  color: var(--ten-white);
+  font-family: var(--font-mono);
+  font-size: var(--fs-caption);
+  font-weight: 700;
+  border-radius: var(--r-pill);
+}
+
+.tutorial-close {
+  background: none;
+  border: none;
+  color: var(--fg-3);
+  font-size: 1.3rem;
+  line-height: 1;
+  cursor: pointer;
+  padding: 2px 6px;
+  border-radius: var(--r-xs);
+}
+.tutorial-close:hover {
+  color: var(--ten-red);
+  background: var(--bg-muted);
+}
+
+.tutorial-title {
+  font-family: var(--font-bangla);
+  font-size: var(--fs-body);
+  font-weight: 700;
+  color: var(--fg-1);
+  margin-bottom: var(--s-2);
+}
+
+.tutorial-desc {
+  font-family: var(--font-bangla);
+  font-size: var(--fs-body-sm);
+  color: var(--fg-2);
+  line-height: 1.7;
+  margin-bottom: var(--s-4);
+}
+
+.tutorial-progress {
+  display: flex;
+  gap: 4px;
+  margin-bottom: var(--s-4);
+}
+
+.tutorial-dash {
+  flex: 1;
+  height: 4px;
+  border-radius: var(--r-pill);
+  background: var(--border);
+  transition: background var(--dur-base) var(--ease-out);
+}
+.tutorial-dash.active {
+  background: var(--ten-red);
+}
+
+.tutorial-actions {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--s-3);
+}
+
+.tutorial-skip-btn {
+  background: none;
+  border: none;
+  color: var(--fg-3);
+  font-family: var(--font-bangla);
+  font-size: var(--fs-caption);
+  font-weight: 600;
+  cursor: pointer;
+  text-decoration: underline;
+  text-underline-offset: 2px;
+}
+.tutorial-skip-btn:hover {
+  color: var(--ten-red);
+}
+
+.tutorial-nav {
+  display: flex;
+  gap: var(--s-2);
+}
+.tutorial-nav .btn {
+  min-height: 36px;
+  padding: 6px var(--s-4);
+}
+
+@media (max-width: 480px) {
+  .tutorial-box {
+    width: calc(100vw - 24px);
+  }
+}
+
+/* ============================================================
+   FEEDBACK CTA + MODAL
+   ============================================================ */
+.feedback-cta {
+  position: fixed;
+  right: var(--s-5);
+  bottom: var(--s-5);
+  z-index: 1500;
+  display: inline-flex;
+  align-items: center;
+  gap: var(--s-2);
+  padding: 10px 18px;
+  background: var(--surface-card);
+  color: var(--ten-red);
+  border: 1px solid rgba(232,0,29,0.3);
+  border-radius: var(--r-pill);
+  font-family: var(--font-bangla);
+  font-size: var(--fs-body-sm);
+  font-weight: 700;
+  letter-spacing: 0.01em;
+  cursor: pointer;
+  box-shadow: var(--sh-raised);
+  transition: background var(--dur-base) var(--ease-out),
+              transform var(--dur-base) var(--ease-out),
+              box-shadow var(--dur-base) var(--ease-out);
+}
+.feedback-cta:hover {
+  background: #FFF5F6;
+  border-color: var(--ten-red);
+  transform: translateY(-1px);
+  box-shadow: 0 6px 18px rgba(232,0,29,0.18);
+}
+.feedback-cta:active {
+  transform: translateY(0) scale(0.98);
+}
+
+[data-theme="dark"] .feedback-cta {
+  background: #1E293B;
+  color: #F87171;
+  border-color: rgba(248,113,113,0.35);
+}
+[data-theme="dark"] .feedback-cta:hover {
+  background: rgba(248,113,113,0.10);
+  border-color: #F87171;
+}
+
+.feedback-icon {
+  font-size: 1rem;
+  line-height: 1;
+}
+
+@media (max-width: 640px) {
+  .feedback-cta {
+    right: var(--s-4);
+    bottom: var(--s-4);
+    padding: 12px;
+    gap: 0;
+  }
+  .feedback-text {
+    display: none;
+  }
+}
+
+.feedback-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 3000;
+  background: rgba(4,6,10,0.6);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: var(--s-4);
+}
+.feedback-overlay.hidden {
+  display: none;
+}
+
+.feedback-modal {
+  position: relative;
+  width: min(560px, 100%);
+  height: min(680px, 90vh);
+  background: var(--surface-card);
+  border-radius: var(--r-lg);
+  box-shadow: var(--sh-raised), 0 20px 60px rgba(0,0,0,0.35);
+  overflow: hidden;
+}
+
+.feedback-modal-close {
+  position: absolute;
+  top: var(--s-3);
+  right: var(--s-3);
+  z-index: 1;
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  border: none;
+  background: rgba(17,24,39,0.55);
+  color: var(--ten-white);
+  font-size: 1.2rem;
+  line-height: 1;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: background var(--dur-base) var(--ease-out);
+}
+.feedback-modal-close:hover {
+  background: rgba(17,24,39,0.8);
+}
+
+.feedback-iframe {
+  width: 100%;
+  height: 100%;
+  border: none;
+  display: block;
+}
+
+@media (max-width: 640px) {
+  .feedback-overlay {
+    padding: 0;
+  }
+  .feedback-modal {
+    width: 100%;
+    height: 100%;
+    border-radius: 0;
   }
 }
 

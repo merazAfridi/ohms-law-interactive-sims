@@ -9,7 +9,7 @@
    ============================================================ */
 const Config = {
   VOLTAGE_MIN: 0,
-  VOLTAGE_MAX: 24,
+  VOLTAGE_MAX: 1000,
   VOLTAGE_DEFAULT: 12,
   RESISTANCE_MIN: 0,
   RESISTANCE_MAX: 1000,
@@ -22,11 +22,7 @@ const Config = {
   MAX_BRIGHTNESS_CURRENT: 1,
   GRAPH_MAX_POINTS: 300,
   GRAPH_UPDATE_INTERVAL: 50,
-  ZOOM_MIN: 0.5,
-  ZOOM_MAX: 2.5,
-  ZOOM_STEP: 0.1,
-  NEEDLE_MAX_ANGLE: 75,
-  SAFE_CURRENT_DISPLAY: 999
+  NEEDLE_MAX_ANGLE: 75
 };
 
 /** @returns {'bn'|'en'} Active UI language */
@@ -113,7 +109,7 @@ class PhysicsEngine {
     const calculatedBrightness = switchClosed
       ? Math.min(100, (current / Config.MAX_BRIGHTNESS_CURRENT) * 100)
       : 0;
-    const brightness = Math.max(1, calculatedBrightness);
+    const brightness = calculatedBrightness > 0 ? Math.max(1, calculatedBrightness) : 0;
 
     const electronSpeed = switchClosed && current > 0
       ? Math.min(3, current / 2)
@@ -181,9 +177,6 @@ class CircuitState {
     this.resistance = Config.RESISTANCE_DEFAULT;
     this.switchClosed = true;
     this.paused = false;
-    this.zoom = 1;
-    this.panX = 0;
-    this.panY = 0;
     this.time = 0;
     this.physics = PhysicsEngine.calculate(
       this.voltage,
@@ -232,36 +225,57 @@ class CircuitState {
     this.updatePhysics();
   }
 
+}
+
+/* ============================================================
+   URL STATE MANAGER — reflect state in shareable query params
+   ============================================================ */
+class URLStateManager {
   /**
-   * Export state as JSON-serializable object
-   * @returns {Object}
+   * Read supported query params from the current URL
+   * @returns {Object} Partial state overrides (only keys present in the URL)
    */
-  toJSON() {
-    return {
-      voltage: this.voltage,
-      resistance: this.resistance,
-      switchClosed: this.switchClosed,
-      theme: document.documentElement.getAttribute('data-theme'),
-      lang: getLang()
-    };
+  static readParams() {
+    const params = new URLSearchParams(window.location.search);
+    const result = {};
+
+    if (params.has('v')) {
+      const v = parseFloat(params.get('v'));
+      if (!Number.isNaN(v)) result.voltage = v;
+    }
+    if (params.has('r')) {
+      const r = parseInt(params.get('r'), 10);
+      if (!Number.isNaN(r)) result.resistance = r;
+    }
+    if (params.has('sw')) {
+      result.switchClosed = params.get('sw') === '1';
+    }
+    if (params.get('lang') === 'bn' || params.get('lang') === 'en') {
+      result.lang = params.get('lang');
+    }
+    if (params.get('theme') === 'light' || params.get('theme') === 'dark') {
+      result.theme = params.get('theme');
+    }
+
+    return result;
   }
 
   /**
-   * Import state from JSON object
-   * @param {Object} data
+   * Write current state into the URL without adding a history entry
+   * @param {CircuitState} state
+   * @param {'bn'|'en'} lang
+   * @param {'light'|'dark'} theme
    */
-  fromJSON(data) {
-    if (typeof data.voltage === 'number') {
-      this.voltage = Math.max(Config.VOLTAGE_MIN, Math.min(Config.VOLTAGE_MAX, data.voltage));
-    }
-    if (typeof data.resistance === 'number') {
-      this.resistance = Math.max(Config.RESISTANCE_MIN, Math.min(Config.RESISTANCE_MAX, data.resistance));
-    }
-    if (typeof data.switchClosed === 'boolean') {
-      this.switchClosed = data.switchClosed;
-    }
-    this.updatePhysics();
-    return { theme: data.theme, lang: data.lang };
+  static update(state, lang, theme) {
+    const params = new URLSearchParams();
+    params.set('v', state.voltage.toFixed(1));
+    params.set('r', String(state.resistance));
+    params.set('sw', state.switchClosed ? '1' : '0');
+    params.set('lang', lang);
+    params.set('theme', theme);
+
+    const newUrl = `${window.location.pathname}?${params.toString()}`;
+    window.history.replaceState(null, '', newUrl);
   }
 }
 
@@ -678,19 +692,8 @@ class CircuitRenderer {
       bulbFilament: document.getElementById('bulb-filament'),
       bulbBrightnessLabel: document.getElementById('bulb-brightness-label'),
       wires: document.querySelectorAll('.wire:not(.wire-volt)'),
-      arrows: document.querySelectorAll('.arrow'),
-      circuitGroup: document.getElementById('circuit-group')
+      arrows: document.querySelectorAll('.arrow')
     };
-  }
-
-  /**
-   * Apply zoom and pan transform to circuit group
-   */
-  applyTransform() {
-    this.elements.circuitGroup.setAttribute(
-      'transform',
-      'translate(0, 0) scale(1)'
-    );
   }
 
   /**
@@ -774,33 +777,35 @@ class CircuitRenderer {
     }
 
     const b = this.smoothBrightness / 100;
-    const glowOpacity = b * 0.7;
-    
-    const displayVal = Math.round(target);
-    let glassColor = '#0C331E';
-    if (displayVal >= 81) glassColor = '#14FF6B';
-    else if (displayVal >= 61) glassColor = '#169E4A';
-    else if (displayVal >= 41) glassColor = '#136B37';
-    else if (displayVal >= 21) glassColor = '#114F2A';
-    else glassColor = '#0C331E';
 
-    this.elements.bulbGlow.setAttribute('fill', glassColor);
-    this.elements.bulbGlow.setAttribute('opacity', glowOpacity.toString());
-    this.elements.bulbGlass.setAttribute('fill', glassColor);
+    // Warm bulb-on amber, interpolated smoothly from the theme's off-gray glass —
+    // a steady glow whose color, size, and intensity all scale with brightness.
+    const rootStyle = getComputedStyle(document.documentElement);
+    const offColor = rootStyle.getPropertyValue('--bulb-off').trim() || '#D1D5DB';
+    const onColor = rootStyle.getPropertyValue('--bulb-on').trim() || '#FBBF24';
+    const glassColor = this.interpolateColor(offColor, onColor, b);
+    const glowRadius = 32 + b * 22;
+
+    // .style.* (not setAttribute) — the CSS classes for these elements declare
+    // their own fill/stroke, which as a stylesheet rule always wins over a plain
+    // presentation attribute. Only an inline style can actually override it.
+    this.elements.bulbGlow.style.fill = onColor;
+    this.elements.bulbGlow.setAttribute('opacity', (b * 0.85).toString());
+    this.elements.bulbGlow.setAttribute('r', glowRadius.toString());
+    this.elements.bulbGlass.style.fill = glassColor;
 
     if (b > 0.05) {
-      // No random flicker ? use stable filament color based on brightness only
-      const filamentColor = this.interpolateColor('#78716c', glassColor, b);
-      this.elements.bulbFilament.setAttribute('stroke', filamentColor);
-      this.elements.bulbFilament.setAttribute('stroke-width', String(2 + b * 2));
+      const filamentColor = this.interpolateColor('#78716c', onColor, b);
+      this.elements.bulbFilament.style.stroke = filamentColor;
+      this.elements.bulbFilament.style.strokeWidth = String(2 + b * 2);
       if (b > 0.3) {
         this.elements.bulbFilament.setAttribute('filter', 'url(#glow-yellow)');
       } else {
         this.elements.bulbFilament.removeAttribute('filter');
       }
     } else {
-      this.elements.bulbFilament.setAttribute('stroke', '#78716c');
-      this.elements.bulbFilament.setAttribute('stroke-width', '2');
+      this.elements.bulbFilament.style.stroke = '#78716c';
+      this.elements.bulbFilament.style.strokeWidth = '2';
       this.elements.bulbFilament.removeAttribute('filter');
     }
 
@@ -878,7 +883,6 @@ class CircuitRenderer {
    * @param {number} deltaTime
    */
   render(deltaTime) {
-    this.applyTransform();
     this.renderSwitch();
     this.renderMeters(deltaTime);
     this.renderBulb(deltaTime);
@@ -910,14 +914,13 @@ class UIController {
     return {
       voltageSlider: document.getElementById('voltage-slider'),
       resistanceSlider: document.getElementById('resistance-slider'),
-      voltageDisplay: document.getElementById('voltage-display'),
-      resistanceDisplay: document.getElementById('resistance-display'),
+      voltageInput: document.getElementById('voltage-input'),
+      resistanceInput: document.getElementById('resistance-input'),
       dashVoltage: document.getElementById('dash-voltage'),
       dashCurrent: document.getElementById('dash-current'),
       dashResistance: document.getElementById('dash-resistance'),
       dashPower: document.getElementById('dash-power'),
       dashBrightness: document.getElementById('dash-brightness'),
-      dashElectronSpeed: document.getElementById('dash-electron-speed'),
       dashSwitch: document.getElementById('dash-switch'),
       calcOhm: document.getElementById('calc-ohm'),
       calcCurrent: document.getElementById('calc-current'),
@@ -930,8 +933,7 @@ class UIController {
       eduEmf: document.getElementById('edu-emf'),
       eduResistivity: document.getElementById('edu-resistivity'),
       eduEquivalent: document.getElementById('edu-equivalent'),
-      safetyBanner: document.getElementById('safety-banner'),
-      zoomLevel: document.getElementById('zoom-level')
+      safetyBanner: document.getElementById('safety-banner')
     };
   }
 
@@ -949,6 +951,28 @@ class UIController {
       this.state.resistance = parseInt(this.elements.resistanceSlider.value, 10);
       this.state.updatePhysics();
       this.callbacks.onStateChange();
+    });
+
+    this.elements.voltageInput.addEventListener('input', () => {
+      const val = parseFloat(this.elements.voltageInput.value);
+      if (Number.isNaN(val)) return;
+      this.state.voltage = Math.max(Config.VOLTAGE_MIN, Math.min(Config.VOLTAGE_MAX, val));
+      this.state.updatePhysics();
+      this.callbacks.onStateChange();
+    });
+    this.elements.voltageInput.addEventListener('change', () => {
+      this.syncControls();
+    });
+
+    this.elements.resistanceInput.addEventListener('input', () => {
+      const val = parseFloat(this.elements.resistanceInput.value);
+      if (Number.isNaN(val)) return;
+      this.state.resistance = Math.round(Math.max(Config.RESISTANCE_MIN, Math.min(Config.RESISTANCE_MAX, val)));
+      this.state.updatePhysics();
+      this.callbacks.onStateChange();
+    });
+    this.elements.resistanceInput.addEventListener('change', () => {
+      this.syncControls();
     });
 
     document.getElementById('btn-reset').addEventListener('click', () => {
@@ -987,8 +1011,15 @@ class UIController {
   syncControls() {
     this.elements.voltageSlider.value = this.state.voltage;
     this.elements.resistanceSlider.value = this.state.resistance;
-    this.elements.voltageDisplay.textContent = `${this.state.voltage.toFixed(1)} V`;
-    this.elements.resistanceDisplay.textContent = `${this.state.resistance} \u03A9`;
+
+    // Don't clobber the number input while the user is actively typing in it \u2014
+    // only re-sync its displayed value when something else changed the state.
+    if (document.activeElement !== this.elements.voltageInput) {
+      this.elements.voltageInput.value = this.state.voltage.toFixed(1);
+    }
+    if (document.activeElement !== this.elements.resistanceInput) {
+      this.elements.resistanceInput.value = this.state.resistance;
+    }
   }
 
   /**
@@ -1009,7 +1040,6 @@ class UIController {
       ? p.power.toExponential(2)
       : p.power.toFixed(2);
     this.elements.dashBrightness.textContent = `${Math.round(p.brightness)}%`;
-    this.elements.dashElectronSpeed.textContent = `${p.electronSpeed.toFixed(2)}\u00D7`;
 
     const switchEl = this.elements.dashSwitch;
     switchEl.textContent = p.switchClosed
@@ -1116,12 +1146,6 @@ class UIController {
     else if (types.includes('voltage')) banner.classList.add('warning-high-voltage');
   }
 
-  /**
-   * Update zoom level display
-   */
-  updateZoomDisplay() {
-    this.elements.zoomLevel.textContent = `${Math.round(this.state.zoom * 100)}%`;
-  }
 }
 
 /* ============================================================
@@ -1148,15 +1172,18 @@ class LanguageManager {
     localStorage.setItem('ohm-lang', this.lang);
     this.updateDocumentMeta();
     this.updateButtonTitles();
+    this.syncLangButtons();
     return this.lang;
   }
 
   /**
-   * Toggle between Bangla and English
-   * @returns {'bn'|'en'}
+   * Reflect the active language on the header's segmented lang-switch pills
    */
-  toggle() {
-    return this.apply(this.lang === 'bn' ? 'en' : 'bn');
+  syncLangButtons() {
+    const bnBtn = document.getElementById('btn-lang-bn');
+    const enBtn = document.getElementById('btn-lang-en');
+    if (bnBtn) bnBtn.classList.toggle('active', this.lang === 'bn');
+    if (enBtn) enBtn.classList.toggle('active', this.lang === 'en');
   }
 
   /**
@@ -1188,18 +1215,6 @@ class LanguageManager {
     document.querySelectorAll(`[${attr}]`).forEach(el => {
       el.setAttribute('title', el.getAttribute(attr));
     });
-
-    const langBtn = document.getElementById('btn-lang');
-    if (langBtn) {
-      langBtn.setAttribute(
-        'title',
-        this.lang === 'bn' ? '\u09AD\u09BE\u09B7\u09BE \u09AA\u09B0\u09BF\u09AC\u09B0\u09CD\u09A4\u09A8 \u0995\u09B0\u09C1\u09A8' : 'Change language'
-      );
-      langBtn.setAttribute(
-        'aria-label',
-        this.lang === 'bn' ? '\u09AD\u09BE\u09B7\u09BE \u09AA\u09B0\u09BF\u09AC\u09B0\u09CD\u09A4\u09A8 \u0995\u09B0\u09C1\u09A8' : 'Change language'
-      );
-    }
 
     const themeBtn = document.getElementById('btn-theme');
     if (themeBtn) {
@@ -1325,6 +1340,292 @@ class TooltipManager {
 }
 
 /* ============================================================
+   TUTORIAL STEPS — bilingual guided-walkthrough content
+   ============================================================ */
+const TUTORIAL_STEPS = [
+  {
+    target: '.circuit-panel',
+    titleBn: 'সিমুলেটরে স্বাগতম!',
+    titleEn: 'Welcome to the Simulator!',
+    descBn: 'এই ইন্টারেক্টিভ সিমুলেটরে আপনি ওহমের সূত্র সরাসরি প্র্যাকটিক্যালি দেখতে পারবেন। চলুন ধাপে ধাপে দেখি এটি কীভাবে ব্যবহার করবেন।',
+    descEn: "This interactive simulator lets you see Ohm's Law in action. Let's walk through how to use it, step by step."
+  },
+  {
+    target: '#battery',
+    titleBn: 'ব্যাটারি',
+    titleEn: 'Battery',
+    descBn: 'এটি সার্কিটের ভোল্টেজ উৎস। ডানপাশের ভোল্টেজ স্লাইডার দিয়ে এর মান পরিবর্তন করা যায়।',
+    descEn: "This is the circuit's voltage source. Change its value using the Voltage slider on the right."
+  },
+  {
+    target: '#switch',
+    titleBn: 'সুইচ',
+    titleEn: 'Switch',
+    descBn: 'সার্কিট চালু বা বন্ধ করতে সুইচের ওপর ক্লিক করুন।',
+    descEn: 'Click the switch to open or close the circuit.'
+  },
+  {
+    target: '#ammeter',
+    titleBn: 'অ্যামিটার',
+    titleEn: 'Ammeter',
+    descBn: 'সার্কিটে প্রবাহিত তড়িৎ প্রবাহ (কারেন্ট) অ্যাম্পিয়ার এককে পরিমাপ করে।',
+    descEn: 'Measures the current flowing through the circuit, in amperes.'
+  },
+  {
+    target: '#resistor',
+    titleBn: 'রেজিস্টার',
+    titleEn: 'Resistor',
+    descBn: 'এটি তড়িৎ প্রবাহে বাধা দেয়। রোধ স্লাইডার দিয়ে এর মান পরিবর্তন করুন।',
+    descEn: 'Opposes current flow. Change its value with the Resistance slider.'
+  },
+  {
+    target: '#voltmeter',
+    titleBn: 'ভোল্টমিটার',
+    titleEn: 'Voltmeter',
+    descBn: 'রেজিস্টারের দুই প্রান্তের বিভব পার্থক্য (ভোল্টেজ ড্রপ) পরিমাপ করে।',
+    descEn: 'Measures the voltage drop across the resistor.'
+  },
+  {
+    target: '#bulb',
+    titleBn: 'বাল্ব',
+    titleEn: 'Light Bulb',
+    descBn: 'সার্কিটে ব্যয়িত শক্তির (পাওয়ার) ওপর ভিত্তি করে বাল্বের উজ্জ্বলতা পরিবর্তিত হয়।',
+    descEn: "The bulb's brightness changes based on the power dissipated in the circuit."
+  },
+  {
+    target: '.control-panel',
+    titleBn: 'নিয়ন্ত্রণ প্যানেল',
+    titleEn: 'Control Panel',
+    descBn: 'স্লাইডার টেনে ভোল্টেজ ও রোধের মান বদলান, অথবা রিসেট/এলোমেলো বাটনে ক্লিক করুন।',
+    descEn: 'Drag the sliders to change voltage and resistance, or use the Reset/Randomize buttons.'
+  },
+  {
+    target: '.dashboard',
+    titleBn: 'লাইভ ড্যাশবোর্ড',
+    titleEn: 'Live Dashboard',
+    descBn: 'এখানে সব মান — ভোল্টেজ, কারেন্ট, রোধ, শক্তি — লাইভ দেখা যায়, ওহমের সূত্রের হিসাবসহ।',
+    descEn: "See all live values — voltage, current, resistance, power — along with the Ohm's Law calculation."
+  },
+  {
+    target: '.graphs-section',
+    titleBn: 'লাইভ গ্রাফ',
+    titleEn: 'Live Graphs',
+    descBn: 'সময়ের সাথে কারেন্ট, ভোল্টেজ ও শক্তির পরিবর্তন গ্রাফে দেখুন।',
+    descEn: 'Watch how current, voltage, and power change over time on these graphs.'
+  },
+  {
+    target: '.header-controls',
+    titleBn: 'আরও অপশন',
+    titleEn: 'More Options',
+    descBn: 'এখান থেকে ভাষা ও থিম পরিবর্তন করুন, স্ক্রিনশট নিন, অথবা সেটিংস এক্সপোর্ট/ইম্পোর্ট করুন। উপভোগ করুন!',
+    descEn: 'Switch language, toggle theme, take screenshots, or export/import settings from here. Enjoy exploring!'
+  }
+];
+
+/* ============================================================
+   TUTORIAL MANAGER — spotlight-driven guided walkthrough
+   ============================================================ */
+class TutorialManager {
+  /**
+   * @param {Array} steps - Ordered tutorial step definitions
+   */
+  constructor(steps) {
+    this.steps = steps;
+    this.index = 0;
+    this.elements = {
+      overlay: document.getElementById('tutorial-overlay'),
+      spotlight: document.getElementById('tutorial-spotlight'),
+      box: document.getElementById('tutorial-box'),
+      badge: document.getElementById('tutorial-step-badge'),
+      title: document.getElementById('tutorial-title'),
+      desc: document.getElementById('tutorial-desc'),
+      progress: document.getElementById('tutorial-progress'),
+      backBtn: document.getElementById('tutorial-back'),
+      nextBtn: document.getElementById('tutorial-next'),
+      nextBn: document.getElementById('tutorial-next-bn'),
+      nextEn: document.getElementById('tutorial-next-en')
+    };
+    this.reposition = () => { if (this.isActive()) this.positionAt(this.steps[this.index]); };
+    this.bindEvents();
+  }
+
+  /**
+   * Wire up trigger button, nav controls, and dismiss handlers
+   */
+  bindEvents() {
+    document.getElementById('btn-tutorial').addEventListener('click', () => this.start());
+    this.elements.nextBtn.addEventListener('click', () => this.next());
+    this.elements.backBtn.addEventListener('click', () => this.back());
+    document.getElementById('tutorial-skip').addEventListener('click', () => this.end());
+    document.getElementById('tutorial-close').addEventListener('click', () => this.end());
+
+    document.addEventListener('keydown', (e) => {
+      if (!this.isActive()) return;
+      if (e.key === 'Escape') this.end();
+      else if (e.key === 'ArrowRight') this.next();
+      else if (e.key === 'ArrowLeft') this.back();
+    });
+
+    window.addEventListener('resize', this.reposition);
+  }
+
+  /**
+   * @returns {boolean} Whether the tutorial overlay is currently visible
+   */
+  isActive() {
+    return !this.elements.overlay.classList.contains('hidden');
+  }
+
+  /**
+   * Begin the tour from the first step
+   */
+  start() {
+    this.index = 0;
+    this.elements.overlay.classList.remove('hidden');
+    this.renderStep();
+  }
+
+  /**
+   * Close the tour
+   */
+  end() {
+    this.elements.overlay.classList.add('hidden');
+  }
+
+  /**
+   * Advance to the next step, or finish on the last one
+   */
+  next() {
+    if (this.index < this.steps.length - 1) {
+      this.index++;
+      this.renderStep();
+    } else {
+      this.end();
+    }
+  }
+
+  /**
+   * Return to the previous step
+   */
+  back() {
+    if (this.index > 0) {
+      this.index--;
+      this.renderStep();
+    }
+  }
+
+  /**
+   * Render text, progress, and spotlight position for the current step
+   */
+  renderStep() {
+    const step = this.steps[this.index];
+    const lang = getLang();
+    const isLast = this.index === this.steps.length - 1;
+
+    this.elements.badge.textContent = `${this.index + 1}/${this.steps.length}`;
+    this.elements.title.textContent = lang === 'bn' ? step.titleBn : step.titleEn;
+    this.elements.desc.textContent = lang === 'bn' ? step.descBn : step.descEn;
+
+    this.elements.progress.innerHTML = '';
+    this.steps.forEach((_, i) => {
+      const dash = document.createElement('span');
+      dash.className = 'tutorial-dash' + (i <= this.index ? ' active' : '');
+      this.elements.progress.appendChild(dash);
+    });
+
+    this.elements.backBtn.style.visibility = this.index === 0 ? 'hidden' : 'visible';
+    this.elements.nextBn.textContent = isLast ? 'শেষ করুন' : 'পরবর্তী';
+    this.elements.nextEn.textContent = isLast ? 'Finish' : 'Next';
+
+    this.positionAt(step);
+  }
+
+  /**
+   * Move the spotlight and tooltip box to frame the step's target element
+   * @param {Object} step
+   */
+  positionAt(step) {
+    const targetEl = document.querySelector(step.target);
+    if (!targetEl) return;
+
+    targetEl.scrollIntoView({ behavior: 'smooth', block: 'center' });
+
+    const settle = () => {
+      const pad = 8;
+      const rect = targetEl.getBoundingClientRect();
+
+      this.elements.spotlight.style.top = `${rect.top - pad}px`;
+      this.elements.spotlight.style.left = `${rect.left - pad}px`;
+      this.elements.spotlight.style.width = `${rect.width + pad * 2}px`;
+      this.elements.spotlight.style.height = `${rect.height + pad * 2}px`;
+
+      const boxRect = this.elements.box.getBoundingClientRect();
+      let top = rect.bottom + 16;
+      let left = rect.left + rect.width / 2 - boxRect.width / 2;
+
+      if (top + boxRect.height > window.innerHeight - 12) {
+        top = Math.max(12, rect.top - boxRect.height - 16);
+      }
+      left = Math.max(12, Math.min(left, window.innerWidth - boxRect.width - 12));
+
+      this.elements.box.style.top = `${top}px`;
+      this.elements.box.style.left = `${left}px`;
+    };
+
+    settle();
+    setTimeout(settle, 320);
+  }
+}
+
+/* ============================================================
+   FEEDBACK MANAGER — Tally form embedded in a popup modal
+   ============================================================ */
+class FeedbackManager {
+  /**
+   * @param {string} simulationName - Short identifier passed to Tally as ?simulation_name=
+   */
+  constructor(simulationName) {
+    this.simulationName = simulationName;
+    this.overlay = document.getElementById('feedback-overlay');
+    this.iframe = document.getElementById('feedback-iframe');
+    this.bindEvents();
+  }
+
+  /**
+   * Wire up the trigger button and dismiss handlers
+   */
+  bindEvents() {
+    document.getElementById('btn-feedback').addEventListener('click', () => this.open());
+    document.getElementById('feedback-close').addEventListener('click', () => this.close());
+
+    this.overlay.addEventListener('click', (e) => {
+      if (e.target === this.overlay) this.close();
+    });
+
+    document.addEventListener('keydown', (e) => {
+      if (e.key === 'Escape' && !this.overlay.classList.contains('hidden')) this.close();
+    });
+  }
+
+  /**
+   * Load the Tally form into the iframe and show the modal
+   */
+  open() {
+    const url = `https://tally.so/r/RG87VJ?simulation_name=${encodeURIComponent(this.simulationName)}`;
+    this.iframe.src = url;
+    this.overlay.classList.remove('hidden');
+  }
+
+  /**
+   * Hide the modal and unload the iframe
+   */
+  close() {
+    this.overlay.classList.add('hidden');
+    this.iframe.src = '';
+  }
+}
+
+/* ============================================================
    SIMULATOR APP ? Main application orchestrator
    ============================================================ */
 class SimulatorApp {
@@ -1336,7 +1637,10 @@ class SimulatorApp {
     this.audio = new AudioManager();
     this.theme = new ThemeManager();
     this.lang = new LanguageManager();
+    this.applyURLParams();
     this.tooltip = new TooltipManager();
+    this.tutorial = new TutorialManager(TUTORIAL_STEPS);
+    this.feedback = new FeedbackManager('Ohms_Law_Simulator');
 
     this.renderer = new CircuitRenderer(this.state);
     this.electrons = new ElectronAnimator(
@@ -1359,12 +1663,43 @@ class SimulatorApp {
 
     this.lastFrameTime = performance.now();
     this.animationId = null;
-    this.isDragging = false;
-    this.dragStart = { x: 0, y: 0, panX: 0, panY: 0 };
 
     this.bindGlobalEvents();
     this.onStateChange();
     this.startLoop();
+  }
+
+  /**
+   * Apply state/lang/theme overrides found in the current URL's query params,
+   * so a shared link reproduces the exact circuit it was copied from.
+   */
+  applyURLParams() {
+    const overrides = URLStateManager.readParams();
+
+    if (typeof overrides.voltage === 'number') {
+      this.state.voltage = Math.max(Config.VOLTAGE_MIN, Math.min(Config.VOLTAGE_MAX, overrides.voltage));
+    }
+    if (typeof overrides.resistance === 'number') {
+      this.state.resistance = Math.max(Config.RESISTANCE_MIN, Math.min(Config.RESISTANCE_MAX, overrides.resistance));
+    }
+    if (typeof overrides.switchClosed === 'boolean') {
+      this.state.switchClosed = overrides.switchClosed;
+    }
+    if (overrides.lang) {
+      this.lang.apply(overrides.lang);
+    }
+    if (overrides.theme) {
+      this.theme.apply(overrides.theme);
+    }
+
+    this.state.updatePhysics();
+  }
+
+  /**
+   * Reflect the current circuit/lang/theme state into the URL query string
+   */
+  syncURL() {
+    URLStateManager.update(this.state, this.lang.lang, this.theme.theme);
   }
 
   /**
@@ -1373,11 +1708,17 @@ class SimulatorApp {
   bindGlobalEvents() {
     document.getElementById('btn-theme').addEventListener('click', () => {
       this.theme.toggle();
+      this.syncURL();
     });
 
-    document.getElementById('btn-lang').addEventListener('click', () => {
-      this.lang.toggle();
-      this.lang.updateButtonTitles();
+    document.getElementById('btn-lang-bn').addEventListener('click', () => {
+      this.lang.apply('bn');
+      this.onStateChange();
+      this.graphs.draw();
+    });
+
+    document.getElementById('btn-lang-en').addEventListener('click', () => {
+      this.lang.apply('en');
       this.onStateChange();
       this.graphs.draw();
     });
@@ -1390,30 +1731,9 @@ class SimulatorApp {
       this.takeScreenshot();
     });
 
-    document.getElementById('btn-export').addEventListener('click', () => {
-      this.exportSettings();
-    });
-
-    document.getElementById('btn-import').addEventListener('click', () => {
-      document.getElementById('import-file').click();
-    });
-
-    document.getElementById('import-file').addEventListener('change', (e) => {
-      this.importSettings(e);
-    });
-
     document.getElementById('btn-clear-graphs').addEventListener('click', () => {
       this.graphs.clear();
     });
-  }
-
-  /**
-   * Set zoom level within bounds
-   * @param {number} zoom
-   */
-  setZoom(zoom) {
-    this.state.zoom = Math.max(Config.ZOOM_MIN, Math.min(Config.ZOOM_MAX, zoom));
-    this.ui.updateZoomDisplay();
   }
 
   /**
@@ -1452,6 +1772,7 @@ class SimulatorApp {
     this.ui.syncControls();
     this.ui.updateDashboard();
     this.renderer.renderSwitch();
+    this.syncURL();
   }
 
   /**
@@ -1495,49 +1816,6 @@ class SimulatorApp {
   }
 
   /**
-   * Export current settings as JSON file
-   */
-  exportSettings() {
-    const data = this.state.toJSON();
-    const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
-    const link = document.createElement('a');
-    link.download = `ohm-circuit-settings-${Date.now()}.json`;
-    link.href = URL.createObjectURL(blob);
-    link.click();
-  }
-
-  /**
-   * Import settings from JSON file
-   * @param {Event} e - File input change event
-   */
-  importSettings(e) {
-    const file = e.target.files?.[0];
-    if (!file) return;
-
-    const reader = new FileReader();
-    reader.onload = (ev) => {
-      try {
-        const data = JSON.parse(ev.target.result);
-        const imported = this.state.fromJSON(data);
-        if (imported.theme === 'light' || imported.theme === 'dark') {
-          this.theme.apply(imported.theme);
-        }
-        if (imported.lang === 'bn' || imported.lang === 'en') {
-          this.lang.apply(imported.lang);
-          this.lang.updateButtonTitles();
-        }
-        this.onStateChange();
-      } catch {
-        alert(getLang() === 'bn'
-          ? '\u0985\u09AC\u09B2\u09C1\u09AE\u09CD\u09AD \u09AB\u09BE\u09AF\u09BC\u09B2\u0964 \u09B8\u09A0\u09BF\u0995 JSON \u09AB\u09BE\u09AF\u09BC\u09B2 \u09A8\u09BF\u09B0\u09CD\u09AC\u09BE\u099A\u09A8 \u0995\u09B0\u09C1\u09A8\u0964'
-          : 'Invalid settings file. Please select a valid JSON export.');
-      }
-    };
-    reader.readAsText(file);
-    e.target.value = '';
-  }
-
-  /**
    * Main animation loop using requestAnimationFrame
    * @param {number} now - Current timestamp
    */
@@ -1552,7 +1830,9 @@ class SimulatorApp {
     this.renderer.render(deltaTime);
     this.electrons.update(deltaTime);
     this.spark.update(deltaTime);
-    this.graphs.sample(now);
+    if (!this.state.paused && this.state.switchClosed) {
+      this.graphs.sample(now);
+    }
     this.graphs.draw();
 
     this.animationId = requestAnimationFrame((t) => this.loop(t));
