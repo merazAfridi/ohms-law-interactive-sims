@@ -819,7 +819,6 @@ body {
   font-size: 17px;
   font-family: 'Hind Siliguri', sans-serif;
   font-weight: 600;
-  letter-spacing: 0.01em;
 }
 
 /* Live value display */
@@ -1578,24 +1577,17 @@ input[type="range"]:focus {
     stroke-width: 3;
   }
   /* The SVG renders at ~40% scale on phones, so enlarge the component
-     names and digital readouts. Labels grow upward from their baseline,
-     readouts grow downward from their top edge, so neither covers the
-     component it belongs to. */
-  .comp-label-text,
-  .readout,
-  .comp-value {
-    transform-box: fill-box;
+     names, values and digital readouts. Text is enlarged with font-size,
+     not transforms: some mobile browsers ignore transform-box on <text>
+     and scale it from the SVG origin, which shifts and garbles labels. */
+  .comp-label {
+    font-size: 21px;
   }
-  .comp-label-text {
-    transform-origin: center bottom;
-    transform: scale(1.25);
+  .comp-value {
+    font-size: 19px;
   }
   .readout {
     transform: scale(1.8);
-  }
-  .comp-value {
-    transform-origin: center top;
-    transform: scale(1.3);
   }
 }
 
