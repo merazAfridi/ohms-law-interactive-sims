@@ -22,7 +22,9 @@ const Config = {
   MAX_BRIGHTNESS_CURRENT: 1,
   GRAPH_MAX_POINTS: 300,
   GRAPH_UPDATE_INTERVAL: 50,
-  NEEDLE_MAX_ANGLE: 75
+  NEEDLE_MAX_ANGLE: 75,
+  VIEWBOX_FULL: '0 0 900 520',
+  VIEWBOX_MOBILE: '25 55 750 350'
 };
 
 /** @returns {'bn'|'en'} Active UI language */
@@ -1667,8 +1669,22 @@ class SimulatorApp {
     this.animationId = null;
 
     this.bindGlobalEvents();
+    this.fitCircuitViewBox();
     this.onStateChange();
     this.startLoop();
+  }
+
+  /**
+   * On narrow screens, crop the circuit SVG to the drawn components so the
+   * whole diagram (and its labels) renders larger instead of shrinking to fit
+   * the full 900-unit canvas.
+   */
+  fitCircuitViewBox() {
+    const svg = document.getElementById('circuit-svg');
+    const mq = window.matchMedia('(max-width: 768px)');
+    const apply = () => svg.setAttribute('viewBox', mq.matches ? Config.VIEWBOX_MOBILE : Config.VIEWBOX_FULL);
+    mq.addEventListener('change', apply);
+    apply();
   }
 
   /**
@@ -1793,7 +1809,8 @@ class SimulatorApp {
    * Capture screenshot of entire app
    */
   takeScreenshot() {
-    const svg = document.getElementById('circuit-svg');
+    const svg = document.getElementById('circuit-svg').cloneNode(true);
+    svg.setAttribute('viewBox', Config.VIEWBOX_FULL);
     const svgData = new XMLSerializer().serializeToString(svg);
     const canvas = document.createElement('canvas');
     canvas.width = 900;
