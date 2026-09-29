@@ -1,13 +1,18 @@
 # Ohm's Law Circuit Simulator
 
-A small interactive simulator for learning Ohm's Law (V = IR). It's made for class 9 and 10 students and works in both Bangla and English.
+We built this simulator to help class 9 to 12 students understand Ohm's Law (V = IR) by playing with a real looking circuit. It works in both Bangla and English.
 
-You can change the voltage and resistance and watch the current, the meters and the bulb react right away. There are live graphs too, and a short tutorial if you're not sure where to start.
+## Features
 
-## Running it
-
-No build step. Just open `index.html` in a browser, or serve the folder with any static server:
-
-```
-npx http-server .
-```
+- Change the voltage and resistance with sliders and see the current update instantly
+- Working switch, ammeter, voltmeter and a bulb that gets brighter with more power
+- Moving electrons that show which way the current actually flows
+- Live graphs for current, voltage and power over time
+- A live dashboard with all the readings in one place
+- Short lessons on current, voltage, resistance, power and more
+- NCTB style worked examples with step by step solutions
+- A guided tutorial for first time users
+- Safety warnings when voltage or current gets too high
+- Dark mode, fullscreen and a screenshot button
+- Shareable links that keep your circuit settings
+- Works well on phones too
