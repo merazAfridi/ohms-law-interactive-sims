@@ -15,8 +15,6 @@ const Config = {
   RESISTANCE_MAX: 1000,
   RESISTANCE_DEFAULT: 100,
   BULB_RESISTANCE: 24,
-  HIGH_VOLTAGE_THRESHOLD: 20,
-  HIGH_CURRENT_THRESHOLD: 5,
   MAX_ELECTRONS: 30,
   ELECTRON_BASE_SPEED: 0.002,
   MAX_BRIGHTNESS_CURRENT: 1,
@@ -128,42 +126,6 @@ class PhysicsEngine {
       isShortCircuit,
       switchClosed
     };
-  }
-
-  /**
-   * Check safety conditions and return warning messages
-   * @param {Object} state - Physics state object
-   * @returns {string[]} Array of warning messages
-   */
-  static getSafetyWarnings(state) {
-    const warnings = [];
-    const lang = getLang();
-
-    if (state.isShortCircuit && state.switchClosed) {
-      warnings.push({
-        type: 'short',
-        message: lang === 'bn'
-          ? '\u26A0 \u09B6\u09B0\u09CD\u099F \u09B8\u09BE\u09B0\u09CD\u0995\u09BF\u099F \u2014 \u09B0\u09CB\u09A7 0 \u03A9 \u09B9\u09A4\u09C7 \u09AA\u09BE\u09B0\u09C7 \u09A8\u09BE!'
-          : '\u26A0 Short Circuit \u2014 Resistance cannot be 0 \u03A9!'
-      });
-    }
-    if (state.current > Config.HIGH_CURRENT_THRESHOLD && state.switchClosed) {
-      warnings.push({
-        type: 'current',
-        message: lang === 'bn'
-          ? '\u26A0 \u0989\u099A\u09CD\u099A \u09AC\u09BF\u09A6\u09CD\u09AF\u09C1\u09CE \u2014 5 A \u09A8\u09BF\u09B0\u09BE\u09AA\u09A6 \u09B8\u09C0\u09AE\u09BE \u0985\u09A4\u09BF\u0995\u09CD\u09B0\u09AE!'
-          : '\u26A0 High Current \u2014 Exceeds safe limit of 5 A!'
-      });
-    }
-    if (state.voltage > Config.HIGH_VOLTAGE_THRESHOLD) {
-      warnings.push({
-        type: 'voltage',
-        message: lang === 'bn'
-          ? '\u26A0 \u0989\u099A\u09CD\u099A \u09AD\u09CB\u09B2\u09CD\u099F\u09C7\u099C \u2014 20 V \u09A8\u09BF\u09B0\u09BE\u09AA\u09A4\u09CD\u09A4\u09BE \u09B8\u09C0\u09AE\u09BE \u0985\u09A4\u09BF\u0995\u09CD\u09B0\u09AE!'
-          : '\u26A0 High Voltage \u2014 Exceeds 20 V safety threshold!'
-      });
-    }
-    return warnings;
   }
 }
 
@@ -937,7 +899,6 @@ class UIController {
       eduEmf: document.getElementById('edu-emf'),
       eduResistivity: document.getElementById('edu-resistivity'),
       eduEquivalent: document.getElementById('edu-equivalent'),
-      safetyBanner: document.getElementById('safety-banner')
     };
   }
 
@@ -1080,7 +1041,6 @@ class UIController {
     }
 
     this.updateEducationDynamic(p);
-    this.updateSafetyBanner(p);
   }
 
   /**
@@ -1126,29 +1086,6 @@ class UIController {
       `<span class="lang-en">When multiple resistors are in series or parallel, they can be replaced by one equivalent resistor that preserves the circuit's overall behavior.</span>`);
   }
 
-
-  /**
-   * Show or hide safety warning banner
-   * @param {Object} p - Physics state
-   */
-  updateSafetyBanner(p) {
-    const warnings = PhysicsEngine.getSafetyWarnings(p);
-    const banner = this.elements.safetyBanner;
-
-    if (warnings.length === 0) {
-      banner.classList.add('hidden');
-      banner.textContent = '';
-      return;
-    }
-
-    banner.classList.remove('hidden', 'warning-short', 'warning-high-current', 'warning-high-voltage');
-    banner.textContent = warnings.map(w => w.message).join('  |  ');
-
-    const types = warnings.map(w => w.type);
-    if (types.includes('short')) banner.classList.add('warning-short');
-    else if (types.includes('current')) banner.classList.add('warning-high-current');
-    else if (types.includes('voltage')) banner.classList.add('warning-high-voltage');
-  }
 
 }
 

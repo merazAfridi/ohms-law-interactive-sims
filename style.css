@@ -544,56 +544,6 @@ body {
 }
 
 /* ============================================================
-   SAFETY BANNER
-   ============================================================ */
-.safety-banner {
-  padding: var(--s-3) var(--s-6);
-  margin-bottom: var(--s-3);
-  border-radius: var(--r-md);
-  font-family: var(--font-bangla);
-  font-weight: 700;
-  text-align: center;
-  font-size: var(--fs-body-sm);
-  letter-spacing: 0.01em;
-  animation: pulse-warning 1.5s ease-in-out infinite;
-}
-.safety-banner.hidden { display: none; }
-
-.safety-banner.warning-short {
-  background: #FFF5F6;
-  color: var(--ten-red-dark);
-  border: 2px solid var(--ten-red);
-}
-.safety-banner.warning-high-current {
-  background: #FFF7ED;
-  color: var(--warn-deep);
-  border: 2px solid var(--warn);
-}
-.safety-banner.warning-high-voltage {
-  background: #FFF1F2;
-  color: #9F1239;
-  border: 2px solid #E11D48;
-}
-
-[data-theme="dark"] .safety-banner.warning-short {
-  background: #450A0A;
-  color: #FCA5A5;
-}
-[data-theme="dark"] .safety-banner.warning-high-current {
-  background: #431407;
-  color: #FDBA74;
-}
-[data-theme="dark"] .safety-banner.warning-high-voltage {
-  background: #4C0519;
-  color: #FDA4AF;
-}
-
-@keyframes pulse-warning {
-  0%, 100% { opacity: 1; }
-  50%       { opacity: 0.82; }
-}
-
-/* ============================================================
    MAIN CONTENT LAYOUT
    ============================================================ */
 .main-content {

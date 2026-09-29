@@ -12,7 +12,6 @@ We built this simulator to help class 9 to 12 students understand Ohm's Law (V =
 - Short lessons on current, voltage, resistance, power and more
 - NCTB style worked examples with step by step solutions
 - A guided tutorial for first time users
-- Safety warnings when voltage or current gets too high
 - Dark mode, fullscreen and a screenshot button
 - Shareable links that keep your circuit settings
 - Works well on phones too
